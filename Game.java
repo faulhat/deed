@@ -23,7 +23,7 @@ public class Game {
   public static final int BOXHEIGHT = 20;
 
   // Framerate of game (ms)
-  public static final int UPDATE_INTERVAL = 50;
+  public static final int UPDATE_INTERVAL = 100;
 
   // Enumeration of game-specific events to be handled by game objects
   public static enum Event {
@@ -48,7 +48,7 @@ public class Game {
 
     textArea = new JTextArea();
     textArea.setEditable(false);
-    textArea.setFont(new Font("Monospace", Font.PLAIN, 10));
+    textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
 
     render();
     textArea.setText(displayState);
@@ -62,19 +62,38 @@ public class Game {
   }
 
   public static void render() {
-    displayState = "";
+    displayState = "  ";
+    for (int i = 0; i < BOXWIDTH; i++) {
+      displayState += (char)('A' + i);
+      displayState += " ";
+    }
+    displayState += "\n\n";
 
-    for (int i = 0; i < BOXHEIGHT; i++) {
-      for (int j = 0; j < BOXWIDTH; j++) {
-        if (i == pos.y && j == pos.x) {
-          displayState += "P";
+    int ctr = 2 * (pos.y * BOXWIDTH + pos.x);
+    for (int i = 0; i < BOXHEIGHT; i++) { // Vertical cursor coordinate (y)
+      displayState += (char)('A'+ i);
+      displayState += " ";
+      for (int j = 0; j < BOXWIDTH; j++) { // Horizontal cursor coordinate (x)
+        if (ctr == BOXHEIGHT * BOXWIDTH * 2 - 2) {
+          displayState += "]";
+        }
+        else if (ctr == 0) {
+          displayState += "@";
+        }
+        else if (ctr == 2) {
+          displayState += "[";
+        }
+        else if (ctr % 2 == 0) {
+          displayState += "*";
         }
         else {
-          displayState += "+";
+          displayState += " ";
         }
+        displayState += " ";
+        ctr = (ctr - 2 + BOXHEIGHT * BOXWIDTH * 2) % (BOXHEIGHT * BOXWIDTH * 2);
       }
 
-      displayState += "\n";
+      displayState += "\n\n";
     }
   }
 
@@ -85,7 +104,7 @@ public class Game {
 
       frame.repaint();
 
-      if (++pos.x > BOXWIDTH) {
+      if (++pos.x >= BOXWIDTH) {
         pos.x = 0;
         pos.y = (pos.y + 1) % BOXHEIGHT;
       }

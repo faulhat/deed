@@ -2,7 +2,7 @@
  * Thomas: Main driver class that handles game state and runs the game
  * License: free as in freedom
  * I like elephants and God likes elephants
-*/
+ */
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -69,28 +69,28 @@ public class Game {
     }
     displayState += "\n\n";
 
-    int ctr = 2 * (pos.y * BOXWIDTH + pos.x);
+    int ctr = 2 * (pos.y * BOXWIDTH + pos.x); // Cursor must count by twos starting from (pos.x, pos.y) going left-to-right and top-to-bottom.
     for (int i = 0; i < BOXHEIGHT; i++) { // Vertical cursor coordinate (y)
       displayState += (char)('A'+ i);
       displayState += " ";
       for (int j = 0; j < BOXWIDTH; j++) { // Horizontal cursor coordinate (x)
-        if (ctr == BOXHEIGHT * BOXWIDTH * 2 - 2) {
+        if (ctr == BOXHEIGHT * BOXWIDTH * 2 - 2) { // Include a closed bracket two characters (one space) after pos
           displayState += "]";
         }
-        else if (ctr == 0) {
+        else if (ctr == 0) { // Include an at-sign at the current pos
           displayState += "@";
         }
-        else if (ctr == 2) {
+        else if (ctr == 2) { // Include an open bracket two characters (one space) before pos
           displayState += "[";
         }
-        else if (ctr % 2 == 0) {
+        else if (ctr % 2 == 0) { // Stars everywhere else
           displayState += "*";
         }
         else {
-          displayState += " ";
+          displayState += " "; // Empty space to make everything look nicer.
         }
         displayState += " ";
-        ctr = (ctr - 2 + BOXHEIGHT * BOXWIDTH * 2) % (BOXHEIGHT * BOXWIDTH * 2);
+        ctr = (ctr - 2 + BOXHEIGHT * BOXWIDTH * 2) % (BOXHEIGHT * BOXWIDTH * 2); // Counter increments by two, circling back around after the bottom-right-hand corner.
       }
 
       displayState += "\n\n";
@@ -114,10 +114,10 @@ public class Game {
   }
 
   public static void run() {
-    new Timer().scheduleAtFixedRate(new Updater(), 0, UPDATE_INTERVAL);
+    new Timer().scheduleAtFixedRate(new Updater(), 0, UPDATE_INTERVAL); // display reprinted at a fixed rate defined by the constant UPDATE_INTERVAL
   }
   
-  public static void main(String args[]) {
+  public static void main(String args[]) { // program entry point
     init();
     run();
   }

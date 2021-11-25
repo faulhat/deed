@@ -1,3 +1,5 @@
+import java.awt.Point;
+
 /*
  * Thomas: This class represents an overworld chamber
  * It has a matrix of booleans. true elements represent walls

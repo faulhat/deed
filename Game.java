@@ -4,26 +4,100 @@
  * I like elephants and God likes elephants
  */
 
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Date;
 import java.awt.Font;
 import java.awt.FlowLayout;
+import java.awt.event.*;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
-import javax.swing.SwingConstants;
+import java.util.concurrent.*;
+import java.awt.geom.Point2D;
+import java.time.Instant;
+import java.time.Duration;
 
 /*
  * Thomas: This is a singleton class representing the entire game state.
  * It has static fields representing the Swing components used for the UI.
  */
 public class Game {
-  // Width/height of text area for game display (in chars)
-  public static final int BOXWIDTH = 10;
-  public static final int BOXHEIGHT = 20;
+  // Class constants
 
-  // Framerate of game (ms)
-  public static final int UPDATE_INTERVAL = 100;
+  // Width/height of text area for game display (in chars)
+  public static final int WIDTH = 10;
+  public static final int HEIGHT = 20;
+
+  // Speed of player
+  public static final double SPEED = 0.015;
+
+  /*
+   * Thomas: This is a class representing a handler for key presses.
+   * It has to deal with the concurrency introduced by the use of a fixed-rate scheduler later.
+   */
+  public static class KeyBox {
+    /*
+     * Thomas: these two hashmaps represent the input state regarding key presses.
+     * They must be atomic because they will be accessed by the thread in charge of updating everything on each frame.
+     * For atomicity, we use the ConcurrentHashMap template.
+     */
+    
+    // flags to be set when a key is pressed, processed when the frame is updated, and then reset
+    // Basically, "was this key ever pressed between the last reprinting and now?"
+    public ConcurrentHashMap<Integer, Boolean> wasPressed;
+    
+    // flags to be set when a key is pressed and reset only when the key is released
+    public ConcurrentHashMap<Integer, Boolean> isPressed;
+  
+    // A subclass of KeyListener that updates the KeyBox state when keys are pressed.
+    // Note that it is not static, as it is bound to the KeyBox instance it's a part of.
+    public class MyFrame extends JFrame implements KeyListener {
+      public MyFrame() {
+        super();
+        addKeyListener(this);
+        setFocusable(true);
+        setFocusTraversalKeysEnabled(false);
+      }
+
+      @Override
+      public void keyTyped(KeyEvent e) {
+      }
+      
+      @Override
+      public void keyPressed(KeyEvent e) {
+        KeyBox.this.wasPressed.put(e.getKeyCode(), true);
+        KeyBox.this.isPressed.put(e.getKeyCode(), true);
+      }
+      
+      @Override
+      public void keyReleased(KeyEvent e) {
+        KeyBox.this.isPressed.put(e.getKeyCode(), false);
+      }
+    }
+    
+    public JFrame frame;
+    
+    public KeyBox() {
+      wasPressed = new ConcurrentHashMap<>();
+      isPressed = new ConcurrentHashMap<>();
+
+      frame = new MyFrame();
+      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+      frame.setLayout(new FlowLayout());
+    }
+
+    // See if key has been pressed within the last time step.
+    // If it has and is not being held down still, reset the flag to false.
+    public boolean getResetKey(int keyCode) {
+      if (wasPressed.containsKey(keyCode) && wasPressed.get(keyCode)) {
+        if (!(isPressed.containsKey(keyCode) && isPressed.get(keyCode))) {
+          // Do not reset wasPressed flag to false if the key is still being held down.
+          wasPressed.put(keyCode, false);
+        }
+
+        return true;
+      }
+
+      return false;
+    }
+  }
 
   // Enumeration of game-specific events to be handled by game objects
   public static enum Event {
@@ -31,20 +105,21 @@ public class Game {
     PlayerInteract
   }
 
-  // Components of the GUI
-  public static JFrame frame;
+  // Instance of KeyBox to represent the game state
+  public static KeyBox box;
 
+  // Components of the GUI
   public static JTextArea textArea;
 
   // Position of the player
-  public static Point pos;
+  public static Point2D.Double pos;
 
   // Game display state
   private static String displayState;
 
   // Initialize game state
   public static void init() {
-    pos = new Point(0, 0);
+    pos = new Point2D.Double(1.0, 0.0);
 
     textArea = new JTextArea();
     textArea.setEditable(false);
@@ -53,28 +128,47 @@ public class Game {
     render();
     textArea.setText(displayState);
 
-    frame = new JFrame();
-    frame.add(textArea);
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.setLayout(new FlowLayout());
-    frame.pack();
-    frame.setVisible(true);
+    box = new KeyBox();
+
+    box.frame.add(textArea);
+    box.frame.pack();
+    box.frame.setVisible(true);
+  }
+  
+  public static void update(double delta) {
+    double currentSpeed = delta * SPEED;
+
+    if (box.getResetKey(KeyEvent.VK_UP)) {
+      pos.y = Math.max(0.0, pos.y - currentSpeed);
+    }
+    
+    if (box.getResetKey(KeyEvent.VK_DOWN)) {
+      pos.y = Math.min((double) HEIGHT - 1.0, pos.y + currentSpeed);
+    }
+    
+    if (box.getResetKey(KeyEvent.VK_LEFT)) {
+      pos.x = Math.max(1.0, pos.x - currentSpeed);
+    }
+    
+    if (box.getResetKey(KeyEvent.VK_RIGHT)) {
+      pos.x = Math.min((double) WIDTH - 2.0, pos.x + currentSpeed);
+    }
   }
 
   public static void render() {
     displayState = "  ";
-    for (int i = 0; i < BOXWIDTH; i++) {
+    for (int i = 0; i < WIDTH; i++) {
       displayState += (char)('A' + i);
       displayState += " ";
     }
     displayState += "\n\n";
 
-    int ctr = 2 * (pos.y * BOXWIDTH + pos.x); // Cursor must count by twos starting from (pos.x, pos.y) going left-to-right and top-to-bottom.
-    for (int i = 0; i < BOXHEIGHT; i++) { // Vertical cursor coordinate (y)
+    int ctr = 2 * ((int) pos.y * WIDTH + (int) pos.x); // Cursor must count by twos starting from (x, y) going left-to-right and top-to-bottom. x and y are truncated so we can map them onto the grid.
+    for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
       displayState += (char)('A'+ i);
       displayState += " ";
-      for (int j = 0; j < BOXWIDTH; j++) { // Horizontal cursor coordinate (x)
-        if (ctr == BOXHEIGHT * BOXWIDTH * 2 - 2) { // Include a closed bracket two characters (one space) after pos
+      for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
+        if (ctr == HEIGHT * WIDTH * 2 - 2) { // Include a closed bracket two characters (one space) after pos
           displayState += "]";
         }
         else if (ctr == 0) { // Include an at-sign at the current pos
@@ -90,31 +184,22 @@ public class Game {
           displayState += " "; // Empty space to make everything look nicer.
         }
         displayState += " ";
-        ctr = (ctr - 2 + BOXHEIGHT * BOXWIDTH * 2) % (BOXHEIGHT * BOXWIDTH * 2); // Counter increments by two, circling back around after the bottom-right-hand corner.
+        ctr = (ctr - 2 + HEIGHT * WIDTH * 2) % (HEIGHT * WIDTH * 2); // Counter increments by two, circling back around after the bottom-right-hand corner.
       }
 
       displayState += "\n\n";
     }
   }
 
-  // TimerTask for updating the game state at a fixed time step
-  public static class Updater extends TimerTask {
-    public void run() {
-      textArea.setText(displayState);
-
-      frame.repaint();
-
-      if (++pos.x >= BOXWIDTH) {
-        pos.x = 0;
-        pos.y = (pos.y + 1) % BOXHEIGHT;
-      }
-      
-      render();
-    }
-  }
-
   public static void run() {
-    new Timer().scheduleAtFixedRate(new Updater(), 0, UPDATE_INTERVAL); // display reprinted at a fixed rate defined by the constant UPDATE_INTERVAL
+    Instant then = Instant.now();
+    while (true) {
+      Instant now = Instant.now();
+      update((double) Duration.between(then, now).toNanos() / 1e6);
+      render();
+      textArea.setText(displayState);
+      then = now;
+    }
   }
   
   public static void main(String args[]) { // program entry point

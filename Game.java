@@ -21,21 +21,19 @@ import java.time.Duration;
 public class Game {
   // Class constants
 
-  // Width/height of text area for game display (in chars)
+  // Width/height of text area for game display (in "tiles," the smallest units the player can visibly move)
+  // (Tiles are 2x2 chars for now. See render() for implementation)
   public static final int WIDTH = 10;
   public static final int HEIGHT = 20;
 
   // Speed of player
   public static final double SPEED = 0.015;
 
-  /*
-   * Thomas: This is a class representing a handler for key presses.
-   * It has to deal with the concurrency introduced by the use of a fixed-rate scheduler later.
-   */
+  // Thomas: This is a class representing a handler for key presses.
   public static class KeyBox {
     /*
      * Thomas: these two hashmaps represent the input state regarding key presses.
-     * They must be atomic because they will be accessed by the thread in charge of updating everything on each frame.
+     * They must be atomic because they will be accessed by the main thread on each update.
      * For atomicity, we use the ConcurrentHashMap template.
      */
     
@@ -83,12 +81,12 @@ public class Game {
       frame.setLayout(new FlowLayout());
     }
 
-    // See if key has been pressed within the last time step.
-    // If it has and is not being held down still, reset the flag to false.
+    // See if key has been pressed within the last update.
+    // If it has and is not still being held down, reset the flag to false.
     public boolean getResetKey(int keyCode) {
       if (wasPressed.containsKey(keyCode) && wasPressed.get(keyCode)) {
         if (!(isPressed.containsKey(keyCode) && isPressed.get(keyCode))) {
-          // Do not reset wasPressed flag to false if the key is still being held down.
+          // Only reset wasPressed flag to false if the key is not still being held down.
           wasPressed.put(keyCode, false);
         }
 
@@ -136,6 +134,8 @@ public class Game {
   }
   
   public static void update(double delta) {
+    // Multiply the time delta between now and the last update by the SPEED constant to calculate the offset
+    // we should move the player by on this update (if he moves).
     double currentSpeed = delta * SPEED;
 
     if (box.getResetKey(KeyEvent.VK_UP)) {
@@ -155,6 +155,7 @@ public class Game {
     }
   }
 
+  // Method to rewrite displayState after each update.
   public static void render() {
     displayState = "  ";
     for (int i = 0; i < WIDTH; i++) {
@@ -191,13 +192,14 @@ public class Game {
     }
   }
 
+  // Method to call update and render repeatedly until the program exits.
   public static void run() {
     Instant then = Instant.now();
     while (true) {
       Instant now = Instant.now();
-      update((double) Duration.between(then, now).toNanos() / 1e6);
+      update((double) Duration.between(then, now).toNanos() / 1e6); // Provide the time delta for update based on the time since the last iteration.
       render();
-      textArea.setText(displayState);
+      textArea.setText(displayState); // Write displayState to the actual display
       then = now;
     }
   }

@@ -164,28 +164,25 @@ public class Game {
     }
     displayState += "\n\n";
 
-    int ctr = 2 * ((int) pos.y * WIDTH + (int) pos.x); // Cursor must count by twos starting from (x, y) going left-to-right and top-to-bottom. x and y are truncated so we can map them onto the grid.
+    int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
       displayState += (char)('A'+ i);
       displayState += " ";
       for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
-        if (ctr == HEIGHT * WIDTH * 2 - 2) { // Include a closed bracket two characters (one space) after pos
-          displayState += "]";
-        }
-        else if (ctr == 0) { // Include an at-sign at the current pos
-          displayState += "@";
-        }
-        else if (ctr == 2) { // Include an open bracket two characters (one space) before pos
+        if (i == trunc_y && j == trunc_x - 1) { // Include a closed bracket two characters (one space) after pos
           displayState += "[";
         }
-        else if (ctr % 2 == 0) { // Stars everywhere else
+        else if (i == trunc_y && j == trunc_x) { // Include an at-sign at the current pos
+          displayState += "@";
+        }
+        else if (i == trunc_y && j == trunc_x + 1) { // Include an open bracket two characters (one space) before pos
+          displayState += "]";
+        }
+        else { // Stars everywhere else
           displayState += "*";
         }
-        else {
-          displayState += " "; // Empty space to make everything look nicer.
-        }
+        
         displayState += " ";
-        ctr = (ctr - 2 + HEIGHT * WIDTH * 2) % (HEIGHT * WIDTH * 2); // Counter increments by two, circling back around after the bottom-right-hand corner.
       }
 
       displayState += "\n\n";

@@ -4,13 +4,14 @@
  * I like elephants and God likes elephants
  */
 
+import java.awt.Point;
+import java.awt.geom.Point2D;
 import java.awt.Font;
 import java.awt.FlowLayout;
 import java.awt.event.*;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import java.util.concurrent.*;
-import java.awt.geom.Point2D;
 import java.time.Instant;
 import java.time.Duration;
 
@@ -21,7 +22,8 @@ import java.time.Duration;
 public class Game {
   // Class constants
 
-  // Width/height of text area for game display (in "tiles," the smallest units the player can visibly move)
+  // Width/height of text area for game display (in "tiles," the smallest units
+  // the player can visibly move)
   // (Tiles are 2x2 chars for now. See render() for implementation)
   public static final int WIDTH = 10;
   public static final int HEIGHT = 20;
@@ -33,19 +35,22 @@ public class Game {
   public static class KeyBox {
     /*
      * Thomas: these two hashmaps represent the input state regarding key presses.
-     * They must be atomic because they will be accessed by the main thread on each update.
-     * For atomicity, we use the ConcurrentHashMap template.
+     * They must be atomic because they will be accessed by the main thread on each
+     * update. For atomicity, we use the ConcurrentHashMap template.
      */
-    
-    // flags to be set when a key is pressed, processed when the frame is updated, and then reset
+
+    // flags to be set when a key is pressed, processed when the frame is updated,
+    // and then reset
     // Basically, "was this key ever pressed between the last reprinting and now?"
     public ConcurrentHashMap<Integer, Boolean> wasPressed;
-    
+
     // flags to be set when a key is pressed and reset only when the key is released
     public ConcurrentHashMap<Integer, Boolean> isPressed;
-  
-    // A subclass of KeyListener that updates the KeyBox state when keys are pressed.
-    // Note that it is not static, as it is bound to the KeyBox instance it's a part of.
+
+    // A subclass of KeyListener that updates the KeyBox state when keys are
+    // pressed.
+    // Note that it is not static, as it is bound to the KeyBox instance it's a part
+    // of.
     public class MyFrame extends JFrame implements KeyListener {
       public MyFrame() {
         super();
@@ -57,21 +62,21 @@ public class Game {
       @Override
       public void keyTyped(KeyEvent e) {
       }
-      
+
       @Override
       public void keyPressed(KeyEvent e) {
         KeyBox.this.wasPressed.put(e.getKeyCode(), true);
         KeyBox.this.isPressed.put(e.getKeyCode(), true);
       }
-      
+
       @Override
       public void keyReleased(KeyEvent e) {
         KeyBox.this.isPressed.put(e.getKeyCode(), false);
       }
     }
-    
+
     public JFrame frame;
-    
+
     public KeyBox() {
       wasPressed = new ConcurrentHashMap<>();
       isPressed = new ConcurrentHashMap<>();
@@ -97,10 +102,35 @@ public class Game {
     }
   }
 
-  // Enumeration of game-specific events to be handled by game objects
-  public static enum Event {
-    PlayerTouch,
-    PlayerInteract
+  // Base class for game-specific events
+  public static abstract class Event {
+    public static enum Direction {
+      UP, DOWN, LEFT, RIGHT
+    };
+  }
+
+  // Classes representing specific game events
+  public static class TouchEvent extends Event {
+  }
+
+  public static class InteractEvent extends Event {
+    public final Direction fromDirection;
+
+    public InteractEvent(Direction fromDirection) {
+      this.fromDirection = fromDirection;
+    }
+  }
+
+  public static class LeaveSquareEvent extends Event {
+    public final Direction toDirection;
+
+    public LeaveSquareEvent(Direction toDirection) {
+      this.toDirection = toDirection;
+    }
+  }
+
+  public static void goToChamber(Chamber goTo, Point dropAt) {
+
   }
 
   // Instance of KeyBox to represent the game state
@@ -132,24 +162,25 @@ public class Game {
     box.frame.pack();
     box.frame.setVisible(true);
   }
-  
+
   public static void update(double delta) {
-    // Multiply the time delta between now and the last update by the SPEED constant to calculate the offset
+    // Multiply the time delta between now and the last update by the SPEED constant
+    // to calculate the offset
     // we should move the player by on this update (if he moves).
     double currentSpeed = delta * SPEED;
 
     if (box.getResetKey(KeyEvent.VK_UP)) {
       pos.y = Math.max(0.0, pos.y - currentSpeed);
     }
-    
+
     if (box.getResetKey(KeyEvent.VK_DOWN)) {
       pos.y = Math.min((double) HEIGHT - 1.0, pos.y + currentSpeed);
     }
-    
+
     if (box.getResetKey(KeyEvent.VK_LEFT)) {
       pos.x = Math.max(1.0, pos.x - currentSpeed);
     }
-    
+
     if (box.getResetKey(KeyEvent.VK_RIGHT)) {
       pos.x = Math.min((double) WIDTH - 2.0, pos.x + currentSpeed);
     }
@@ -159,29 +190,26 @@ public class Game {
   public static void render() {
     displayState = "  ";
     for (int i = 0; i < WIDTH; i++) {
-      displayState += (char)('A' + i);
+      displayState += (char) ('A' + i);
       displayState += " ";
     }
     displayState += "\n\n";
 
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
-      displayState += (char)('A'+ i);
+      displayState += (char) ('A' + i);
       displayState += " ";
       for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
         if (i == trunc_y && j == trunc_x - 1) { // Include a closed bracket two characters (one space) after pos
           displayState += "[";
-        }
-        else if (i == trunc_y && j == trunc_x) { // Include an at-sign at the current pos
+        } else if (i == trunc_y && j == trunc_x) { // Include an at-sign at the current pos
           displayState += "@";
-        }
-        else if (i == trunc_y && j == trunc_x + 1) { // Include an open bracket two characters (one space) before pos
+        } else if (i == trunc_y && j == trunc_x + 1) { // Include an open bracket two characters (one space) before pos
           displayState += "]";
-        }
-        else { // Stars everywhere else
+        } else { // Stars everywhere else
           displayState += "*";
         }
-        
+
         displayState += " ";
       }
 
@@ -194,13 +222,14 @@ public class Game {
     Instant then = Instant.now();
     while (true) {
       Instant now = Instant.now();
-      update((double) Duration.between(then, now).toNanos() / 1e6); // Provide the time delta for update based on the time since the last iteration.
+      update((double) Duration.between(then, now).toNanos() / 1e6); // Provide the time delta for update based on the
+                                                                    // time since the last iteration.
       render();
       textArea.setText(displayState); // Write displayState to the actual display
       then = now;
     }
   }
-  
+
   public static void main(String args[]) { // program entry point
     init();
     run();

@@ -21,19 +21,11 @@ public class Chamber {
     }
   }
 
-  private final int width;
+  public final int width;
 
-  public int getWidth() {
-    return width;
-  }
+  public final int height;
 
-  private final int height;
-
-  public int getHeight() {
-    return height;
-  }
-
-  private final Square[][] matrix;
+  private Square[][] matrix;
 
   public Square getSquareAt(Point point) {
     return matrix[point.x][point.y];

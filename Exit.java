@@ -27,7 +27,8 @@ public class Exit extends Sprite {
 
     @Override
     public char getSymbol() throws OperationNotSupportedException {
-        throw new OperationNotSupportedException("Sprite of class Exit is not visible, and therefore does not have a symbol.");
+        throw new OperationNotSupportedException(
+                "Sprite of class Exit is not visible, and therefore does not have a symbol.");
     }
 
     public void onEvent(Game.Event e) {

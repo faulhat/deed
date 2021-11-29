@@ -26,7 +26,7 @@ public class Game {
   // the player can visibly move)
   // (Tiles are 2x2 chars for now. See render() for implementation)
   public static final int WIDTH = 10;
-  public static final int HEIGHT = 20;
+  public static final int HEIGHT = 12;
 
   // Speed of player
   public static final double SPEED = 0.015;
@@ -168,12 +168,39 @@ public class Game {
     // to calculate the offset
     // we should move the player by on this update (if he moves).
     double currentSpeed = delta * SPEED;
+    
+    double diagInterval = Math.sqrt(Math.pow(currentSpeed, 2.0) / 2); // How far to move in both directions when we move diagonally.
 
     if (box.getResetKey(KeyEvent.VK_UP)) {
-      pos.y = Math.max(0.0, pos.y - currentSpeed);
+      // If we are moving diagonally, we want to move by diagInterval in both directions
+      if (box.getResetKey(KeyEvent.VK_LEFT)) {
+         pos.x = Math.max(1.0, pos.x - diagInterval);
+         pos.y = Math.max(0.0, pos.y - diagInterval);
+         return; // We have done all the moving we need to do.
+      }
+
+      if (box.getResetKey(KeyEvent.VK_RIGHT)) {
+         pos.x = Math.min((double) WIDTH - 2.0, pos.x + diagInterval);
+         pos.y = Math.max(0.0, pos.y - diagInterval);
+         return;
+      }
+      
+      pos.y = Math.max(0.0, pos.y - currentSpeed); // If we're not moving diagonally, we move by currentSpeed in whichever direction we're going.
     }
 
     if (box.getResetKey(KeyEvent.VK_DOWN)) {
+      if (box.getResetKey(KeyEvent.VK_LEFT)) {
+         pos.x = Math.max(1.0, pos.x - diagInterval);
+         pos.y = Math.min((double) HEIGHT - 1.0, pos.y + diagInterval);
+         return;
+      }
+
+      if (box.getResetKey(KeyEvent.VK_RIGHT)) {
+         pos.x = Math.min((double) WIDTH - 2.0, pos.x + diagInterval);
+         pos.y = Math.min((double) HEIGHT - 1.0, pos.y + diagInterval);
+         return;
+      }
+      
       pos.y = Math.min((double) HEIGHT - 1.0, pos.y + currentSpeed);
     }
 

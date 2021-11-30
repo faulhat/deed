@@ -147,7 +147,7 @@ public class Game {
 
   // Initialize game state
   public static void init() {
-    pos = new Point2D.Double(1.0, 0.0);
+    pos = new Point2D.Double(2.0, 2.0);
 
     textArea = new JTextArea();
     textArea.setEditable(false);
@@ -168,48 +168,41 @@ public class Game {
     // to calculate the offset
     // we should move the player by on this update (if he moves).
     double currentSpeed = delta * SPEED;
-    
-    double diagInterval = Math.sqrt(Math.pow(currentSpeed, 2.0) / 2); // How far to move in both directions when we move diagonally.
+    double diagInterval = Math.sqrt(Math.pow(currentSpeed, 2.0) / 2); // How far to move in both directions when we move
+                                                                      // diagonally.
 
-    if (box.getResetKey(KeyEvent.VK_UP)) {
-      // If we are moving diagonally, we want to move by diagInterval in both directions
-      if (box.getResetKey(KeyEvent.VK_LEFT)) {
-         pos.x = Math.max(1.0, pos.x - diagInterval);
-         pos.y = Math.max(0.0, pos.y - diagInterval);
-         return; // We have done all the moving we need to do.
-      }
+    // If we use WIDTH and HEIGHT as our bounds, we can end up a tile off the
+    // display to the right or bottom.
+    double farRight = (double) WIDTH - 1.0;
+    double farBottom = (double) HEIGHT - 1.0;
 
-      if (box.getResetKey(KeyEvent.VK_RIGHT)) {
-         pos.x = Math.min((double) WIDTH - 2.0, pos.x + diagInterval);
-         pos.y = Math.max(0.0, pos.y - diagInterval);
-         return;
-      }
-      
-      pos.y = Math.max(0.0, pos.y - currentSpeed); // If we're not moving diagonally, we move by currentSpeed in whichever direction we're going.
-    }
+    boolean goingUp = box.getResetKey(KeyEvent.VK_UP),
+        goingDown = box.getResetKey(KeyEvent.VK_DOWN),
+        goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
+        goingRight = box.getResetKey(KeyEvent.VK_RIGHT);
 
-    if (box.getResetKey(KeyEvent.VK_DOWN)) {
-      if (box.getResetKey(KeyEvent.VK_LEFT)) {
-         pos.x = Math.max(1.0, pos.x - diagInterval);
-         pos.y = Math.min((double) HEIGHT - 1.0, pos.y + diagInterval);
-         return;
-      }
-
-      if (box.getResetKey(KeyEvent.VK_RIGHT)) {
-         pos.x = Math.min((double) WIDTH - 2.0, pos.x + diagInterval);
-         pos.y = Math.min((double) HEIGHT - 1.0, pos.y + diagInterval);
-         return;
-      }
-      
-      pos.y = Math.min((double) HEIGHT - 1.0, pos.y + currentSpeed);
-    }
-
-    if (box.getResetKey(KeyEvent.VK_LEFT)) {
-      pos.x = Math.max(1.0, pos.x - currentSpeed);
-    }
-
-    if (box.getResetKey(KeyEvent.VK_RIGHT)) {
-      pos.x = Math.min((double) WIDTH - 2.0, pos.x + currentSpeed);
+    if (goingUp && goingLeft && !goingDown && !goingRight) { // Up and down would cancel each other out, as would left
+                                                             // and right
+      pos.x = Math.max(0.0, pos.x - diagInterval);
+      pos.y = Math.max(0.0, pos.y - diagInterval);
+    } else if (goingDown && goingLeft && !goingUp && !goingRight) {
+      pos.x = Math.max(0.0, pos.x - diagInterval);
+      pos.y = Math.min(farBottom, pos.y + diagInterval);
+    } else if (goingUp && goingRight && !goingDown && !goingLeft) {
+      pos.x = Math.min(farRight, pos.x + diagInterval);
+      pos.y = Math.max(0.0, pos.y - diagInterval);
+    } else if (goingDown && goingRight && !goingUp && !goingLeft) {
+      pos.x = Math.min(farRight, pos.x + diagInterval);
+      pos.y = Math.min(farBottom, pos.y + diagInterval);
+    } else if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal
+                                        // directions.
+      pos.y = Math.max(0.0, pos.y - currentSpeed);
+    } else if (goingDown && !goingUp) {
+      pos.y = Math.min(farBottom, pos.y + currentSpeed);
+    } else if (goingLeft && !goingRight) {
+      pos.x = Math.max(0.0, pos.x - currentSpeed);
+    } else if (goingRight && !goingLeft) {
+      pos.x = Math.min(farRight, pos.x + currentSpeed);
     }
   }
 
@@ -227,12 +220,8 @@ public class Game {
       displayState += (char) ('A' + i);
       displayState += " ";
       for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
-        if (i == trunc_y && j == trunc_x - 1) { // Include a closed bracket two characters (one space) after pos
-          displayState += "[";
-        } else if (i == trunc_y && j == trunc_x) { // Include an at-sign at the current pos
+        if (i == trunc_y && j == trunc_x) {
           displayState += "@";
-        } else if (i == trunc_y && j == trunc_x + 1) { // Include an open bracket two characters (one space) before pos
-          displayState += "]";
         } else { // Stars everywhere else
           displayState += "*";
         }

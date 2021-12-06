@@ -1,5 +1,6 @@
 import java.awt.Point;
 import java.util.ArrayList;
+import java.awt.geom.Point2D;
 
 /*
  * Thomas: This class represents an overworld chamber
@@ -11,9 +12,9 @@ import java.util.ArrayList;
 public class Chamber {
   public static class Square {
     public final boolean isWall;
-
+    
     public ArrayList<Sprite> sprites; // We can still change this externally, because sprites move around.
-
+   
     public Square(boolean isWall, ArrayList<Sprite> sprites) {
       this.isWall = isWall;
       this.sprites = new ArrayList<>();
@@ -29,6 +30,9 @@ public class Chamber {
 
   public Square getSquareAt(Point point) {
     return matrix[point.x][point.y];
+  }
+  public boolean isWall(Point2D.Double point){
+    return matrix[(int)point.x][(int)point.y].isWall;
   }
 
   // Construct new instance by deep-copying arrays for the walls and sprites
@@ -49,5 +53,24 @@ public class Chamber {
 
     this.width = width;
     this.height = height;
+  }
+  //Default Constructor for Chamber
+  public Chamber(){
+      this.width = 13;
+      this.height = 13;
+      this.matrix = new Square[width][height];
+      for (int i = 0; i < width; i++){
+         for (int j = 0; j < height; j++){
+            ArrayList<Sprite> s = new ArrayList<Sprite>();
+            if (j > 6 && i < 6){
+               Square toPut = new Square(true,s);
+               matrix[i][j] = toPut;
+            }
+            else{
+               Square toPut = new Square(false,s);
+               matrix[i][j] = toPut;
+            }
+         }
+      }
   }
 }

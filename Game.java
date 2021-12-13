@@ -25,9 +25,12 @@ public class Game {
   // Width/height of text area for game display (in "tiles," the smallest units
   // the player can visibly move)
   // (Tiles are 2x2 chars for now. See render() for implementation)
-  public static final int WIDTH = 10;
-  public static final int HEIGHT = 12;
-
+  public static final int WIDTH = 15;
+  public static final int HEIGHT = 18;
+  
+  //Chamber for testing
+  public static final Chamber test_Chamber = new Chamber();
+  
   // Speed of player
   public static final double SPEED = 0.015;
 
@@ -46,7 +49,7 @@ public class Game {
 
     // flags to be set when a key is pressed and reset only when the key is released
     public ConcurrentHashMap<Integer, Boolean> isPressed;
-
+    
     // A subclass of KeyListener that updates the KeyBox state when keys are
     // pressed.
     // Note that it is not static, as it is bound to the KeyBox instance it's a part
@@ -175,7 +178,7 @@ public class Game {
     // display to the right or bottom.
     double farRight = (double) WIDTH - 1.0;
     double farBottom = (double) HEIGHT - 1.0;
-
+    Point2D.Double prevPos = new Point2D.Double(pos.x,pos.y);
     boolean goingUp = box.getResetKey(KeyEvent.VK_UP),
         goingDown = box.getResetKey(KeyEvent.VK_DOWN),
         goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
@@ -194,43 +197,48 @@ public class Game {
     } else if (goingDown && goingRight && !goingUp && !goingLeft) {
       pos.x = Math.min(farRight, pos.x + diagInterval);
       pos.y = Math.min(farBottom, pos.y + diagInterval);
-    } else if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal
+    } else if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal                           
                                         // directions.
-      pos.y = Math.max(0.0, pos.y - currentSpeed);
+      pos.y = Math.max(0.0, pos.y - currentSpeed); 
+       
     } else if (goingDown && !goingUp) {
       pos.y = Math.min(farBottom, pos.y + currentSpeed);
+      
     } else if (goingLeft && !goingRight) {
       pos.x = Math.max(0.0, pos.x - currentSpeed);
     } else if (goingRight && !goingLeft) {
       pos.x = Math.min(farRight, pos.x + currentSpeed);
     }
+    if ((int)prevPos.x != (int)pos.x || (int)prevPos.y != (int)pos.y){
+         if (test_Chamber.isWall(pos)){
+            pos = prevPos;
+         }
+    }
+    
   }
 
   // Method to rewrite displayState after each update.
   public static void render() {
-    displayState = "  ";
-    for (int i = 0; i < WIDTH; i++) {
-      displayState += (char) ('A' + i);
-      displayState += " ";
-    }
-    displayState += "\n\n";
-
+    displayState = "";
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
-      displayState += (char) ('A' + i);
-      displayState += " ";
       for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
         if (i == trunc_y && j == trunc_x) {
           displayState += "@";
-        } else { // Stars everywhere else
-          displayState += "*";
+        } else { // Where there are wall, the | character is used. Where there are not, the * character is used
+            if (test_Chamber.getSquareAt(new Point(j,i)).isWall){
+               displayState += "|";
+            }
+            else{
+               displayState += "*";
+            }
         }
 
         displayState += " ";
       }
 
       displayState += "\n\n";
-    }
+    } 
   }
 
   // Method to call update and render repeatedly until the program exits.

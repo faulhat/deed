@@ -1,15 +1,16 @@
 import javax.naming.OperationNotSupportedException;
+import java.io.*;
 
 public abstract class Sprite {
-  public final boolean visible;
-
-  public Sprite(boolean visible) {
-    this.visible = visible;
-  }
-
+  public boolean visible;
+  
   public abstract String getName();
 
   public abstract char getSymbol() throws OperationNotSupportedException;
 
   public abstract void onEvent(Game.Event e);
+  
+  public abstract void writeObject(ObjectOutputStream oos);
+  
+  public abstract void readObject(ObjectInputStream ois);
 }

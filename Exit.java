@@ -14,7 +14,7 @@ public class Exit extends Sprite {
     public final Point nextSquare; // What square do we appear on in the Chamber we're going to?
 
     public Exit(Game.Event.Direction direction, Chamber goesTo, Point nextSquare) {
-        super(false);
+        visible = false;
         this.direction = direction;
         this.goesTo = goesTo;
         this.nextSquare = nextSquare;

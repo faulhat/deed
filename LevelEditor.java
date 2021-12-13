@@ -1,9 +1,3 @@
-/*
- * Thomas: Main driver class that handles game state and runs the game
- * License: free as in freedom
- * I like elephants and God likes elephants
- */
-
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.awt.Font;
@@ -14,34 +8,38 @@ import javax.swing.JTextArea;
 import javax.naming.OperationNotSupportedException;
 import java.util.concurrent.*;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.time.Instant;
 import java.time.Duration;
 import java.io.*;
 
-/*
- * Thomas: This is a singleton class representing the entire game state.
- * It has static fields representing the Swing components used for the UI.
- */
-public class Game {
-  // Class constants
 
-  // Width/height of text area for game display (in "tiles," the smallest units
-  // the player can visibly move)
-  // (Tiles are 2x2 chars for now. See render() for implementation)
+public class LevelEditor{
+  
+    
   public static final int WIDTH = 10;
   public static final int HEIGHT = 12;
   public static final int DIALOGUE_HEIGHT = 4;
   public static final int DIALOGUE_WIDTH = WIDTH-2;
+  public static final double SPEED = 0.010; 
   
- 
- 
-  //Chamber for testing
-  public static Chamber c;
-  public static Chamber 
-  // Speed of player
-  public static final double SPEED = 0.015;
+  //KeyBox
+  public static KeyBox box;
 
-  // Thomas: This is a class representing a handler for key presses.
+  // Components of the GUI
+  public static JTextArea textArea;
+
+  // Position of the player
+  public static Point2D.Double pos;
+
+  // Game display state
+  private static String displayState;
+  
+  public static char[][] matrix = new char[HEIGHT][WIDTH];
+  
+
+  
+   // Thomas: This is a class representing a handler for key presses.
   public static class KeyBox {
     /*
      * Thomas: these two hashmaps represent the input state regarding key presses.
@@ -113,59 +111,19 @@ public class Game {
       return false;
     }
   }
-
-  // Base class for game-specific events
-  public static abstract class Event {
-    public static enum Direction {
-      UP, DOWN, LEFT, RIGHT
-    };
-  }
-
-  // Classes representing specific game events
-  public static class TouchEvent extends Event {
-  }
-
-  public static class InteractEvent extends Event {
-    public final Direction fromDirection;
-
-    public InteractEvent(Direction fromDirection) {
-      this.fromDirection = fromDirection;
-    }
-  }
-
-  public static class LeaveSquareEvent extends Event {
-    public final Direction toDirection;
-
-    public LeaveSquareEvent(Direction toDirection) {
-      this.toDirection = toDirection;
-    }
-  }
-
-  public static void goToChamber(Chamber goTo, Point dropAt) {
-
-  }
-
-  // Instance of KeyBox to represent the game state
-  public static KeyBox box;
-
-  // Components of the GUI
-  public static JTextArea textArea;
-
-  // Position of the player
-  public static Point2D.Double pos;
-
-  // Game display state
-  private static String displayState;
-
+  
   // Initialize game state
-  public static void init() throws OperationNotSupportedException, FileNotFoundException{
-    
+  public static void init() throws OperationNotSupportedException{
     pos = new Point2D.Double(2.0, 2.0);
-
+    
     textArea = new JTextArea();
     textArea.setEditable(false);
     textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
-
+    for (int i = 0; i < HEIGHT; i++){
+      for (int j = 0; j < WIDTH; j++){
+         matrix[i][j] = ' ';
+      }
+    }
     render();
     textArea.setText(displayState);
 
@@ -175,7 +133,6 @@ public class Game {
     box.frame.pack();
     box.frame.setVisible(true);
   }
-
   public static void update(double delta) {
     // Multiply the time delta between now and the last update by the SPEED constant
     // to calculate the offset
@@ -192,72 +149,64 @@ public class Game {
     boolean goingUp = box.getResetKey(KeyEvent.VK_UP),
         goingDown = box.getResetKey(KeyEvent.VK_DOWN),
         goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
-        goingRight = box.getResetKey(KeyEvent.VK_RIGHT);
+        goingRight = box.getResetKey(KeyEvent.VK_RIGHT),
+        terrainChangeVerticalWall = box.getResetKey(86),
+        terrainChangeHorizontalWall = box.getResetKey(72),
+        terrainChangeClear = box.getResetKey(67),
+        Serialize = box.getResetKey(77);
 
-    if (goingUp && goingLeft && !goingDown && !goingRight) { // Up and down would cancel each other out, as would left
-                                                             // and right
-      pos.x = Math.max(0.0, pos.x - diagInterval);
-      pos.y = Math.max(0.0, pos.y - diagInterval);
-    } else if (goingDown && goingLeft && !goingUp && !goingRight) {
-      pos.x = Math.max(0.0, pos.x - diagInterval);
-      pos.y = Math.min(farBottom, pos.y + diagInterval);
-    } else if (goingUp && goingRight && !goingDown && !goingLeft) {
-      pos.x = Math.min(farRight, pos.x + diagInterval);
-      pos.y = Math.max(0.0, pos.y - diagInterval);
-    } else if (goingDown && goingRight && !goingUp && !goingLeft) {
-      pos.x = Math.min(farRight, pos.x + diagInterval);
-      pos.y = Math.min(farBottom, pos.y + diagInterval);
-    } else if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal                          
+    if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal                          
                                         // directions.
       pos.y = Math.max(0.0, pos.y - currentSpeed);
-       
+     
     } else if (goingDown && !goingUp) {
       pos.y = Math.min(farBottom, pos.y + currentSpeed);
-     
+      
     } else if (goingLeft && !goingRight) {
       pos.x = Math.max(0.0, pos.x - currentSpeed);
+      
     } else if (goingRight && !goingLeft) {
       pos.x = Math.min(farRight, pos.x + currentSpeed);
+      
     }
-    if ((int)prevPos.x != (int)pos.x || (int)prevPos.y != (int)pos.y){
-         if (test_Chamber.isWall(pos)){
-            pos = prevPos;
-         }
+    if (terrainChangeVerticalWall){
+      matrix[(int)pos.y][(int)pos.x] = '|';
     }
-   
-  }
-
-  // Method to rewrite displayState after each update.
-  public static void render() throws OperationNotSupportedException{
+    else if (terrainChangeHorizontalWall){
+      matrix[(int)pos.y][(int)pos.x] = '-';
+    }
+    else if (terrainChangeClear){
+      matrix[(int)pos.y][(int)pos.x] = ' ';
+    }
+    else if (Serialize){
+     try{
+         FileOutputStream f = new FileOutputStream("SerializedChambers");
+         Scanner s = new Scanner(new File("SerializedChambers"));
+         ObjectOutputStream o = new ObjectOutputStream(f);
+         Chamber c = new Chamber(matrix);
+         o.writeObject(c);
+         o.flush();
+         o.close();
+         System.out.println("Done");
+         
+         
+     }
+     catch(Exception e){
+     }
+    }
     
-    c = (chamber
+    
+  }
+  public static void render() throws OperationNotSupportedException{
     displayState = "";
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
-    for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
-      for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
-        ArrayList<Sprite> s = new ArrayList<Sprite>(test_Chamber.getSquareAt(new Point(j,i)).sprites);
+    for (int i = 0; i < HEIGHT-1; i++) { // Vertical cursor coordinate (y)
+      for (int j = 0; j < WIDTH-1; j++) { // Horizontal cursor coordinate (x)
         if (i == trunc_y && j == trunc_x) {
           displayState += "@";
-        } 
-        else if(test_Chamber.getSquareAt(new Point(j,i)).isWall){
-          displayState += "|";
         }
-
-        else if (test_Chamber.getSquareAt(new Point(j,i)).sprites.size() == 0){
-          displayState += " ";
-        }   
         else{           
-         if (s.get(0) != null){
-            if (s.get(0).visible == true){
-               displayState += test_Chamber.getSquareAt(new Point(j,i)).sprites.get(0).getSymbol();
-            }
-            else{
-               displayState += " ";
-            }
-         }
-         else{
-           displayState += " ";
-         }
+           displayState += matrix[i][j];
         }   
         displayState += " ";
       }
@@ -284,24 +233,30 @@ public class Game {
   }
 
   // Method to call update and render repeatedly until the program exits.
-  public static void run() throws OperationNotSupportedException{
+  public static void run() throws Exception{
     Instant then = Instant.now();
     while (true) {
       Instant now = Instant.now();
-      update((double) Duration.between(then, now).toNanos() / 1e6); // Provide the time delta for update based on the
-                                                                    // time since the last iteration.
-      render();
-      textArea.setText(displayState); // Write displayState to the actual display
-      then = now;
+      update((double) Duration.between(then, now).toNanos() / 1e6);
+       // Provide the time delta for update based on the
+       // time since the last iteration.
+       render();
+       textArea.setText(displayState); // Write displayState to the actual display
+       then = now;
     }
   }
+
 
   public static void main(String args[]) { // program entry point
     try{  
       init();
       run();
     }
-    catch(OperationNotSupportedException e){
+    catch(Exception e){
     }
   }
 }
+
+  
+
+

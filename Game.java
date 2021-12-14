@@ -36,8 +36,7 @@ public class Game {
  
  
   //Chamber for testing
-  public static Chamber c;
-  public static Chamber 
+  public static final Chamber test_Chamber = new Chamber();
   // Speed of player
   public static final double SPEED = 0.015;
 
@@ -230,7 +229,6 @@ public class Game {
   // Method to rewrite displayState after each update.
   public static void render() throws OperationNotSupportedException{
     
-    c = (chamber
     displayState = "";
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
@@ -302,6 +300,8 @@ public class Game {
       run();
     }
     catch(OperationNotSupportedException e){
+    }
+    catch(FileNotFoundException e){
     }
   }
 }

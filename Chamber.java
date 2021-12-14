@@ -10,7 +10,7 @@ import java.io.*;
  * It also has a matrix of Sprite objects representing the sprite
  * on each square. A null element means there's nothing on that square.
  */
-public class Chamber implements Serializable{
+public class Chamber{
   public static class Square {
     public final boolean isWall;
    
@@ -20,23 +20,7 @@ public class Chamber implements Serializable{
       this.isWall = isWall;
       this.sprites = new ArrayList<>();
       this.sprites.addAll(sprites);
-    }
-    private void readObject(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException{
-      stream.defaultReadObject();
-      for (int i = 0; i < sprites.size(); i++){
-         sprites.add((Sprite)stream.readObject());
-      }
-    }
-    private void writeObject(java.io.ObjectOutputStream stream) throws IOException{
-      stream.writeBoolean(isWall);
-      for (int i = 0; i < sprites.size(); i++){
-         sprites.get(i).writeObject(stream);
-      }
-    }
-    private void readObjectNoData() throws ObjectStreamException{
-      
-    }
-    
+    }   
   }
 
   public final int width;
@@ -53,23 +37,7 @@ public class Chamber implements Serializable{
   }
   public boolean isWall(Point2D.Double point){
     return matrix[(int)point.x][(int)point.y].isWall;
-  }
-  private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException{
-  
-  }
-  private void writeObject(ObjectOutputStream oos) throws IOException {
-        oos.defaultWriteObject();
-        for (int i = 0; i < height; i++){
-         for (int j = 0; j < width; j++){
-          matrix[i][j].writeObject(oos);
-         }
-        }
-      
-  }
-  public void readObjectNoData() throws ObjectStreamException{
-  
-  }
-  
+  }  
   // Construct new instance by deep-copying arrays for the walls and sprites
   public Chamber(int width, int height, Square[][] matrix) {
     // Integrity check: make sure the dimensions of both arrays match those

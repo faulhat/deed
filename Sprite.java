@@ -3,6 +3,7 @@ import java.io.*;
 
 public abstract class Sprite {
   public boolean visible;
+ 
   
   public abstract String getName();
 
@@ -13,4 +14,6 @@ public abstract class Sprite {
   public abstract void writeObject(ObjectOutputStream oos);
   
   public abstract void readObject(ObjectInputStream ois);
+  
+  public abstract String getID();
 }

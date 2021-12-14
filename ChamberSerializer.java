@@ -9,7 +9,7 @@ public class ChamberSerializer{
                   toReturn += Integer.toString(i) + "," + Integer.toString(j);
                }
                else{
-                  for (Sprite s in chamber.getSquareAt(new Point(j,i)).sprites){
+                  for (Sprite s : chamber.getSquareAt(new Point(j,i)).sprites){
                      
                   }
                }
@@ -21,6 +21,7 @@ public class ChamberSerializer{
        }
     }
     public static Chamber deserializeChamber(String string){
-    
+        Chamber c = new Chamber();
+        return c;
     }
 }

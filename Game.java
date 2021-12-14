@@ -144,6 +144,7 @@ public class Game {
 
   }
 
+  public static BlockingQueue dialogueIn;
   // Instance of KeyBox to represent the game state
   public static KeyBox box;
 
@@ -157,10 +158,10 @@ public class Game {
   private static String displayState;
 
   // Initialize game state
-  public static void init() throws OperationNotSupportedException, FileNotFoundException{
+  public static void init() throws OperationNotSupportedException, FileNotFoundException, InterruptedException{
     
     pos = new Point2D.Double(2.0, 2.0);
-
+    dialogueIn = new LinkedBlockingQueue<String>();
     textArea = new JTextArea();
     textArea.setEditable(false);
     textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
@@ -227,7 +228,7 @@ public class Game {
   }
 
   // Method to rewrite displayState after each update.
-  public static void render() throws OperationNotSupportedException{
+  public static void render() throws OperationNotSupportedException, InterruptedException{
     
     displayState = "";
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
@@ -261,6 +262,30 @@ public class Game {
       }
       displayState += "\n\n";
     }
+    
+    if (dialogueIn.size() == 0){
+      renderEmptyDialogueBox();
+    }
+    else{
+      String toSay = "";
+      toSay += (String)dialogueIn.poll(1, TimeUnit.MILLISECONDS);
+      displayState += "+";
+      for (int i = 0; i < DIALOGUE_WIDTH*2+1; i++) { // Horizontal cursor coordinate (x)
+       displayState += "-";
+      }
+      displayState += "+";
+      displayState +="\n";
+      String[][] toInsert = formatString(toSay.split(""));
+      for (int i = 0;i < DIALOGUE_HEIGHT; i++) {
+        displayState += "|";
+        for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
+          displayState += " ";
+        }
+        displayState +="|\n";
+      }
+    }
+  }
+  public static void renderEmptyDialogueBox(){
     displayState += "+";
     for (int i = 0; i < DIALOGUE_WIDTH*2+1; i++) { // Horizontal cursor coordinate (x)
       displayState += "-";
@@ -272,7 +297,7 @@ public class Game {
       for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
         displayState += " ";
       }
-      displayState+="|\n";
+      displayState +="|\n";
     }
     displayState += "+";
     for(int i = 0; i < DIALOGUE_WIDTH*2+1; i++){
@@ -280,6 +305,15 @@ public class Game {
     }
     displayState += "+";
   }
+  public static String[][] formatString(String[] str){
+    String[][] formattedDialogue= new String[DIALOGUE_HEIGHT][DIALOGUE_WIDTH];
+    for (int i = 0; i < Math.min(str.length, (DIALOGUE_HEIGHT-2)*(DIALOGUE_WIDTH*2)); i++){
+      formattedDialogue[i%DIALOGUE_WIDTH][i/DIALOGUE_WIDTH] =  str[i];
+    }
+    return formattedDialogue;
+  }
+  
+  
 
   // Method to call update and render repeatedly until the program exits.
   public static void run() throws OperationNotSupportedException{
@@ -294,7 +328,7 @@ public class Game {
     }
   }
 
-  public static void main(String args[]) { // program entry point
+  public static void main(String args[]) throws InterruptedException{ // program entry point
     try{  
       init();
       run();

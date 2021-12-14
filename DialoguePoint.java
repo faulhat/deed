@@ -26,7 +26,7 @@ public class DialoguePoint extends Sprite{
    public void onEvent(Game.Event e){
       if (e instanceof Game.TouchEvent) {
          Game.TouchEvent touchE = (Game.TouchEvent) e;
-         
+         dialogueIn.add(dialogueSequence);
      
       }
    }

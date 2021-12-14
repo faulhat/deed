@@ -49,7 +49,7 @@ public class Chamber{
 
     this.matrix = new Square[width][height];
     for (int i = 0; i < width; i++) {
-      for (int j = 0; j < height; j++) {
+     for (int j = 0; j < height; j++) {
         this.matrix[i][j] = matrix[i][j];
       }
     }

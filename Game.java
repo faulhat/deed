@@ -56,8 +56,6 @@ public class Game {
     // flags to be set when a key is pressed and reset only when the key is released
     public ConcurrentHashMap<Integer, Boolean> isPressed;
    
-    //Input Queue for dialogue and other stuff
-    public ConcurrentLinkedQueue dialogueInsert;
     // A subclass of KeyListener that updates the KeyBox state when keys are
     // pressed.
     // Note that it is not static, as it is bound to the KeyBox instance it's a part
@@ -263,7 +261,11 @@ public class Game {
       displayState += "\n\n";
     }
     
+<<<<<<< HEAD
     if (dialogueIn.size() == 0){
+=======
+   /* if (dialogueIn.size() == 0){
+>>>>>>> 4b152923566c4b3fe4b02a98f525e87a7b6897d5
       renderEmptyDialogueBox();
     }
     else{
@@ -276,6 +278,7 @@ public class Game {
       displayState += "+";
       displayState +="\n";
       String[][] toInsert = formatString(toSay.split(""));
+<<<<<<< HEAD
       for (int i = 0;i < DIALOGUE_HEIGHT; i++) {
         displayState += "|";
         for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
@@ -286,6 +289,26 @@ public class Game {
     }
   }
   public static void renderEmptyDialogueBox(){
+=======
+      for (int i = 0;i < Math.min(DIALOGUE_HEIGHT,toInsert.length); i++) {
+        displayState += "|";
+        for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
+          displayState += toInsert[i][j];
+        }
+        displayState +="|\n";
+      }
+      //Checks if dialogue has gone off dialogueBox screen
+      if (i == DIALOGUE_HEIGHT && j == DIALOGUE_WIDTH){
+        String toPut = "";
+        for (int i = 0; i < )  
+          for (j = j; j < DIALOGUE_WIDTH; j++){
+              toPut += toInsert
+          }
+      }
+    }*/
+  }
+  /*public static void renderEmptyDialogueBox(){
+>>>>>>> 4b152923566c4b3fe4b02a98f525e87a7b6897d5
     displayState += "+";
     for (int i = 0; i < DIALOGUE_WIDTH*2+1; i++) { // Horizontal cursor coordinate (x)
       displayState += "-";
@@ -308,15 +331,22 @@ public class Game {
   public static String[][] formatString(String[] str){
     String[][] formattedDialogue= new String[DIALOGUE_HEIGHT][DIALOGUE_WIDTH];
     for (int i = 0; i < Math.min(str.length, (DIALOGUE_HEIGHT-2)*(DIALOGUE_WIDTH*2)); i++){
+<<<<<<< HEAD
       formattedDialogue[i%DIALOGUE_WIDTH][i/DIALOGUE_WIDTH] =  str[i];
     }
     return formattedDialogue;
   }
+=======
+      formattedDialogue[i%DIALOGUE_WIDTH][i/DIALOGUE_WIDTH] = str[i];
+    }
+    return formattedDialogue;
+  }*/
+>>>>>>> 4b152923566c4b3fe4b02a98f525e87a7b6897d5
   
   
 
   // Method to call update and render repeatedly until the program exits.
-  public static void run() throws OperationNotSupportedException{
+  public static void run() throws OperationNotSupportedException, InterruptedException{
     Instant then = Instant.now();
     while (true) {
       Instant now = Instant.now();

@@ -162,6 +162,7 @@ public class Game {
     dialogueIn = new LinkedBlockingQueue<String>();
     textArea = new JTextArea();
     textArea.setEditable(false);
+    textArea.setFocusable(false);
     textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
 
     render();
@@ -334,14 +335,13 @@ public class Game {
     }
   }
 
-  public static void main(String args[]) throws InterruptedException{ // program entry point
+  public static void main(String args[]) throws Exception { // program entry point
     try{  
       init();
       run();
     }
-    catch(OperationNotSupportedException e){
-    }
-    catch(FileNotFoundException e){
+    catch(Exception e) {
+      throw e;
     }
   }
 }

@@ -5,6 +5,9 @@ import java.awt.FlowLayout;
 import java.awt.event.*;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.naming.OperationNotSupportedException;
 import java.util.concurrent.*;
 import java.util.ArrayList;
@@ -15,13 +18,14 @@ import java.io.*;
 
 
 public class LevelEditor{
-  
     
   public static final int WIDTH = 10;
   public static final int HEIGHT = 12;
   public static final int DIALOGUE_HEIGHT = 4;
   public static final int DIALOGUE_WIDTH = WIDTH-2;
-  public static final double SPEED = 0.010; 
+  public static final double SPEED = 0.010;
+  
+  
   
   //KeyBox
   public static KeyBox box;
@@ -34,10 +38,9 @@ public class LevelEditor{
 
   // Game display state
   private static String displayState;
-  
+  //Matrix of chars to store insertion for levels
   public static char[][] matrix = new char[HEIGHT][WIDTH];
-  
-
+  //Class representing menus for insertion of various sprites
   
    // Thomas: This is a class representing a handler for key presses.
   public static class KeyBox {
@@ -54,14 +57,17 @@ public class LevelEditor{
 
     // flags to be set when a key is pressed and reset only when the key is released
     public ConcurrentHashMap<Integer, Boolean> isPressed;
-   
+
+    // flags to be set when a component is clicked or released
+    public ConcurrentHashMap<Integer, Boolean> wasInteractedWith;
+    
     //Input Queue for dialogue and other stuff
     public ConcurrentLinkedQueue dialogueInsert;
     // A subclass of KeyListener that updates the KeyBox state when keys are
     // pressed.
     // Note that it is not static, as it is bound to the KeyBox instance it's a part
     // of.
-    public class MyFrame extends JFrame implements KeyListener {
+    public class MyFrame extends JFrame implements KeyListener, ActionListener{
       public MyFrame() {
         super();
         addKeyListener(this);
@@ -83,17 +89,42 @@ public class LevelEditor{
       public void keyReleased(KeyEvent e) {
         KeyBox.this.isPressed.put(e.getKeyCode(), false);
       }
-    }
+      @Override
+      public void actionPerformed(ActionEvent a){
 
+      }
+    }
+    
     public JFrame frame;
+    //Menu for sprite insertion
+    public JMenuBar spriteMenuBar;
+    
 
     public KeyBox() {
       wasPressed = new ConcurrentHashMap<>();
       isPressed = new ConcurrentHashMap<>();
-
+      spriteMenuBar = new JMenuBar();
       frame = new MyFrame();
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       frame.setLayout(new FlowLayout());
+      JMenuItem dialoguePoint = new JMenuItem("DialoguePoint");
+      JMenuItem exit = new JMenuItem("Exit");
+      JMenu interactions = new JMenu("interactions");
+      JMenu NPC = new JMenu("NPC");
+      JMenu Enemy = new JMenu("ENEMY");
+      JMenuItem standardEncounter = new JMenuItem("StandardEncounter");
+      JMenuItem bossEncounter = new JMenuItem("BossEncounter");
+      JMenuItem trader = new JMenuItem("trader");
+      JMenuItem partyMember = new JMenuItem("PartyMember");
+      NPC.add(trader);
+      NPC.add(partyMember);
+      Enemy.add(standardEncounter);
+      Enemy.add(bossEncounter);
+      interactions.add(exit);
+      interactions.add(dialoguePoint);
+      spriteMenuBar.add(NPC);
+      spriteMenuBar.add(Enemy);
+      spriteMenuBar.add(interactions);
     }
 
     // See if key has been pressed within the last update.
@@ -128,24 +159,20 @@ public class LevelEditor{
     textArea.setText(displayState);
 
     box = new KeyBox();
-
     box.frame.add(textArea);
     box.frame.pack();
     box.frame.setVisible(true);
+    box.frame.setJMenuBar(box.spriteMenuBar);
   }
   public static void update(double delta) {
     // Multiply the time delta between now and the last update by the SPEED constant
     // to calculate the offset
     // we should move the player by on this update (if he moves).
     double currentSpeed = delta * SPEED;
-    double diagInterval = Math.sqrt(Math.pow(currentSpeed, 2.0) / 2); // How far to move in both directions when we move
-                                                                      // diagonally.
-
     // If we use WIDTH and HEIGHT as our bounds, we can end up a tile off the
     // display to the right or bottom.
     double farRight = (double) WIDTH - 1.0;
     double farBottom = (double) HEIGHT - 1.0;
-    Point2D.Double prevPos = new Point2D.Double(pos.x,pos.y);
     boolean goingUp = box.getResetKey(KeyEvent.VK_UP),
         goingDown = box.getResetKey(KeyEvent.VK_DOWN),
         goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
@@ -153,7 +180,9 @@ public class LevelEditor{
         terrainChangeVerticalWall = box.getResetKey(86),
         terrainChangeHorizontalWall = box.getResetKey(72),
         terrainChangeClear = box.getResetKey(67),
-        Serialize = box.getResetKey(77);
+        openInsertMenu = box.getResetKey(73),
+        Serialize = box.getResetKey(77),
+        select = box.getResetKey(83);
 
     if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal                          
                                         // directions.
@@ -180,14 +209,7 @@ public class LevelEditor{
     }
     else if (Serialize){
      try{
-         FileOutputStream f = new FileOutputStream("SerializedChambers");
-         Scanner s = new Scanner(new File("SerializedChambers"));
-         ObjectOutputStream o = new ObjectOutputStream(f);
-         Chamber c = new Chamber(matrix);
-         o.writeObject(c);
-         o.flush();
-         o.close();
-         System.out.println("Done");
+         
          
          
      }
@@ -247,12 +269,13 @@ public class LevelEditor{
   }
 
 
-  public static void main(String args[]) { // program entry point
+  public static void main(String args[]) throws Exception { // program entry point
     try{  
       init();
       run();
     }
-    catch(Exception e){
+    catch(Exception e) {
+      throw e;
     }
   }
 }

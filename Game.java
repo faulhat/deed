@@ -3,7 +3,6 @@
  * License: free as in freedom
  * I like elephants and God likes elephants
  */
-
 import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.awt.Font;
@@ -17,14 +16,12 @@ import java.util.ArrayList;
 import java.time.Instant;
 import java.time.Duration;
 import java.io.*;
-
 /*
  * Thomas: This is a singleton class representing the entire game state.
  * It has static fields representing the Swing components used for the UI.
  */
 public class Game {
   // Class constants
-
   // Width/height of text area for game display (in "tiles," the smallest units
   // the player can visibly move)
   // (Tiles are 2x2 chars for now. See render() for implementation)
@@ -39,7 +36,6 @@ public class Game {
   public static final Chamber test_Chamber = new Chamber();
   // Speed of player
   public static final double SPEED = 0.015;
-
   // Thomas: This is a class representing a handler for key presses.
   public static class KeyBox {
     /*
@@ -47,12 +43,10 @@ public class Game {
      * They must be atomic because they will be accessed by the main thread on each
      * update. For atomicity, we use the ConcurrentHashMap template.
      */
-
     // flags to be set when a key is pressed, processed when the frame is updated,
     // and then reset
     // Basically, "was this key ever pressed between the last reprinting and now?"
     public ConcurrentHashMap<Integer, Boolean> wasPressed;
-
     // flags to be set when a key is pressed and reset only when the key is released
     public ConcurrentHashMap<Integer, Boolean> isPressed;
    
@@ -67,34 +61,27 @@ public class Game {
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
       }
-
       @Override
       public void keyTyped(KeyEvent e) {
       }
-
       @Override
       public void keyPressed(KeyEvent e) {
         KeyBox.this.wasPressed.put(e.getKeyCode(), true);
         KeyBox.this.isPressed.put(e.getKeyCode(), true);
       }
-
       @Override
       public void keyReleased(KeyEvent e) {
         KeyBox.this.isPressed.put(e.getKeyCode(), false);
       }
     }
-
     public JFrame frame;
-
     public KeyBox() {
       wasPressed = new ConcurrentHashMap<>();
       isPressed = new ConcurrentHashMap<>();
-
       frame = new MyFrame();
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       frame.setLayout(new FlowLayout());
     }
-
     // See if key has been pressed within the last update.
     // If it has and is not still being held down, reset the flag to false.
     public boolean getResetKey(int keyCode) {
@@ -103,58 +90,43 @@ public class Game {
           // Only reset wasPressed flag to false if the key is not still being held down.
           wasPressed.put(keyCode, false);
         }
-
         return true;
       }
-
       return false;
     }
   }
-
   // Base class for game-specific events
   public static abstract class Event {
     public static enum Direction {
       UP, DOWN, LEFT, RIGHT
     };
   }
-
   // Classes representing specific game events
   public static class TouchEvent extends Event {
   }
-
   public static class InteractEvent extends Event {
     public final Direction fromDirection;
-
     public InteractEvent(Direction fromDirection) {
       this.fromDirection = fromDirection;
     }
   }
-
   public static class LeaveSquareEvent extends Event {
     public final Direction toDirection;
-
     public LeaveSquareEvent(Direction toDirection) {
       this.toDirection = toDirection;
     }
   }
-
   public static void goToChamber(Chamber goTo, Point dropAt) {
-
   }
-
   public static BlockingQueue dialogueIn;
   // Instance of KeyBox to represent the game state
   public static KeyBox box;
-
   // Components of the GUI
   public static JTextArea textArea;
-
   // Position of the player
   public static Point2D.Double pos;
-
   // Game display state
   private static String displayState;
-
   // Initialize game state
   public static void init() throws OperationNotSupportedException, FileNotFoundException, InterruptedException{
     
@@ -162,18 +134,15 @@ public class Game {
     dialogueIn = new LinkedBlockingQueue<String>();
     textArea = new JTextArea();
     textArea.setEditable(false);
+    textArea.setFocusable(false);
     textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
-
     render();
     textArea.setText(displayState);
-
     box = new KeyBox();
-
     box.frame.add(textArea);
     box.frame.pack();
     box.frame.setVisible(true);
   }
-
   public static void update(double delta) {
     // Multiply the time delta between now and the last update by the SPEED constant
     // to calculate the offset
@@ -181,7 +150,6 @@ public class Game {
     double currentSpeed = delta * SPEED;
     double diagInterval = Math.sqrt(Math.pow(currentSpeed, 2.0) / 2); // How far to move in both directions when we move
                                                                       // diagonally.
-
     // If we use WIDTH and HEIGHT as our bounds, we can end up a tile off the
     // display to the right or bottom.
     double farRight = (double) WIDTH - 1.0;
@@ -191,7 +159,6 @@ public class Game {
         goingDown = box.getResetKey(KeyEvent.VK_DOWN),
         goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
         goingRight = box.getResetKey(KeyEvent.VK_RIGHT);
-
     if (goingUp && goingLeft && !goingDown && !goingRight) { // Up and down would cancel each other out, as would left
                                                              // and right
       pos.x = Math.max(0.0, pos.x - diagInterval);
@@ -224,7 +191,6 @@ public class Game {
     }
    
   }
-
   // Method to rewrite displayState after each update.
   public static void render() throws OperationNotSupportedException, InterruptedException{
     
@@ -239,7 +205,6 @@ public class Game {
         else if(test_Chamber.getSquareAt(new Point(j,i)).isWall){
           displayState += "|";
         }
-
         else if (test_Chamber.getSquareAt(new Point(j,i)).sprites.size() == 0){
           displayState += " ";
         }   
@@ -261,11 +226,7 @@ public class Game {
       displayState += "\n\n";
     }
     
-<<<<<<< HEAD
-    if (dialogueIn.size() == 0){
-=======
    /* if (dialogueIn.size() == 0){
->>>>>>> 4b152923566c4b3fe4b02a98f525e87a7b6897d5
       renderEmptyDialogueBox();
     }
     else{
@@ -278,18 +239,6 @@ public class Game {
       displayState += "+";
       displayState +="\n";
       String[][] toInsert = formatString(toSay.split(""));
-<<<<<<< HEAD
-      for (int i = 0;i < DIALOGUE_HEIGHT; i++) {
-        displayState += "|";
-        for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
-          displayState += " ";
-        }
-        displayState +="|\n";
-      }
-    }
-  }
-  public static void renderEmptyDialogueBox(){
-=======
       for (int i = 0;i < Math.min(DIALOGUE_HEIGHT,toInsert.length); i++) {
         displayState += "|";
         for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
@@ -308,7 +257,6 @@ public class Game {
     }*/
   }
   /*public static void renderEmptyDialogueBox(){
->>>>>>> 4b152923566c4b3fe4b02a98f525e87a7b6897d5
     displayState += "+";
     for (int i = 0; i < DIALOGUE_WIDTH*2+1; i++) { // Horizontal cursor coordinate (x)
       displayState += "-";
@@ -331,20 +279,12 @@ public class Game {
   public static String[][] formatString(String[] str){
     String[][] formattedDialogue= new String[DIALOGUE_HEIGHT][DIALOGUE_WIDTH];
     for (int i = 0; i < Math.min(str.length, (DIALOGUE_HEIGHT-2)*(DIALOGUE_WIDTH*2)); i++){
-<<<<<<< HEAD
-      formattedDialogue[i%DIALOGUE_WIDTH][i/DIALOGUE_WIDTH] =  str[i];
-    }
-    return formattedDialogue;
-  }
-=======
       formattedDialogue[i%DIALOGUE_WIDTH][i/DIALOGUE_WIDTH] = str[i];
     }
     return formattedDialogue;
   }*/
->>>>>>> 4b152923566c4b3fe4b02a98f525e87a7b6897d5
   
   
-
   // Method to call update and render repeatedly until the program exits.
   public static void run() throws OperationNotSupportedException, InterruptedException{
     Instant then = Instant.now();
@@ -358,14 +298,14 @@ public class Game {
     }
   }
 
-  public static void main(String args[]) throws InterruptedException{ // program entry point
+
+  public static void main(String args[]) throws Exception { // program entry point
     try{  
       init();
       run();
     }
-    catch(OperationNotSupportedException e){
-    }
-    catch(FileNotFoundException e){
+    catch(Exception e) {
+      throw e;
     }
   }
 }

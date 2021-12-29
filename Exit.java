@@ -24,6 +24,10 @@ public class Exit extends Sprite {
     public String getName() {
         return "EXIT";
     }
+    @Override
+    public String getID(){
+        return "E_SP";
+    }
 
     @Override
     public char getSymbol() throws OperationNotSupportedException {

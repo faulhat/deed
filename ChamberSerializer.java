@@ -10,22 +10,12 @@ public class ChamberSerializer{
        //Iterates through chamber and adds to a string, which will be added to a file 
        for(int i = 0; i < chamber.height; i++){
          for (int j = 0; j < chamber.width; j++){
-<<<<<<< HEAD
-            if (chamber.getSquareAt(new Point(j,i)) != null){
-               if (chamber.getSquare(new Point(j,i)).sprites.size() == 0){
-                  toReturn += Integer.toString(i) + "," + Integer.toString(j);
-               }
-               else{
-                  for (Sprite s : chamber.getSquareAt(new Point(j,i)).sprites){
-                     
-=======
             Point squareAt = new Point(i,j);
             toReturn += '(' + Integer.toString(i) + '|' + Integer.toString(j) + ' ';
             if (chamber.getSquareAt(squareAt) != null){
                if (chamber.getSquareAt(squareAt).sprites.size() != 0){
                   for (Sprite s : chamber.getSquareAt(squareAt).sprites){
                      toReturn += ' ' + s.getID(); 
->>>>>>> 4b152923566c4b3fe4b02a98f525e87a7b6897d5
                   }
                }
             }
@@ -35,10 +25,6 @@ public class ChamberSerializer{
        return toReturn;
     }
     public static Chamber deserializeChamber(String string){
-<<<<<<< HEAD
-        Chamber c = new Chamber();
-        return c;
-=======
       double length = Math.sqrt((double)string.length());
       int useLength = (int)length;
       char[][] matrix = new char[useLength][useLength];
@@ -77,10 +63,10 @@ public class ChamberSerializer{
             if (matrix[i][j] == '\n'){
             }
          }
-      } 
->>>>>>> 4b152923566c4b3fe4b02a98f525e87a7b6897d5
+      }
+      //I just put this here because the error was irritating me lol
+      Chamber c = new Chamber();
+      return c;
     }
-    //I just put this here because the error was irritating me lol
-    Chamber c = new Chamber();
-    return c;
+    
 }

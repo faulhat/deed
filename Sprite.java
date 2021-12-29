@@ -11,9 +11,5 @@ public abstract class Sprite {
 
   public abstract void onEvent(Game.Event e);
   
-  public abstract void writeObject(ObjectOutputStream oos);
-  
-  public abstract void readObject(ObjectInputStream ois);
-  
   public abstract String getID();
 }

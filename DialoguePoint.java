@@ -17,8 +17,8 @@ public class DialoguePoint extends Sprite{
    public String getName(){
       return name;
    }
-   public void setName(String name){
-      this.name = name;
+   public String getID(){
+      return "D_POINT";
    }
    public void setDialogue(String dialogue){
       dialogueSequence = dialogue;
@@ -26,7 +26,7 @@ public class DialoguePoint extends Sprite{
    public void onEvent(Game.Event e){
       if (e instanceof Game.TouchEvent) {
          Game.TouchEvent touchE = (Game.TouchEvent) e;
-         dialogueIn.add(dialogueSequence);
+         Game.dialogueIn.add(dialogueSequence);
      
       }
    }

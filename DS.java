@@ -1,25 +1,30 @@
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Stack;
+import java.io.Writer;
+import java.io.StringWriter;
+import java.util.HashMap;
 
 /*
  * Thomas: Here's a class all about storing data
  * We are using an s-expression based format to store game data.
  * It is loosely based on the Clojure EDN format but many features unnecessary for our purposes are absent.
  */
-
-public class DataStorage {
+public class DS {
     public static interface Storable {
-        public void load(Reader reader); // Read serialized data from reader
+        public static class LoadingException extends Exception {
+            public LoadingException(String name, String complaint) {
+                super("Loading exception from " + name + ": " + complaint);
+            }
+        }
 
-        public void loads(String str); // Read serialized data from string
+        // Read data from parse tree
+        public void load(Node node) throws LoadingException;
 
-        public void dump(Writer writer); // Write serialized data to writer
-
-        public String dumps(); // Return string containing serialized data
+        // Write serialized data as a parse tree
+        public Node dump();
     }
 
     public static class ParserException extends Exception {
@@ -46,6 +51,12 @@ public class DataStorage {
         }
     }
 
+    public static class IncompleteExpressionException extends ParserException {
+        public IncompleteExpressionException(int lineno, int colno, String token) {
+            super(lineno, colno, "Error! This expression is incomplete. Expression ends prematurely on token: " + token);
+        }
+    }
+
     public static abstract class Node {
         // Write a string containing a diagram of this node
         public abstract String walk(int depth);
@@ -58,6 +69,16 @@ public class DataStorage {
         // Print out the parse tree
         public void print() {
             System.out.println(toString());
+        }
+
+        public abstract void dump(Writer writer) throws IOException;
+
+        public String dumps() throws IOException {
+            try (StringWriter writer = new StringWriter()) {
+                dump(writer);
+
+                return writer.toString();
+            }
         }
     }
 
@@ -77,12 +98,23 @@ public class DataStorage {
 
             return out;
         }
+
+        public void dumpSubordinates(Writer writer) throws IOException {
+            for (Node subnode : complexVal) {
+                subnode.dump(writer);
+            }
+        }
     }
 
     public static class Root extends ComplexNode {
         @Override
         public String walk(int depth) {
             return " ".repeat(depth) + " ROOT {-\n" + walkSubordinates(depth) + "-}\n";
+        }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            dumpSubordinates(writer);
         }
     }
 
@@ -91,12 +123,26 @@ public class DataStorage {
         public String walk(int depth) {
             return " ".repeat(depth) + "(\n" + walkSubordinates(depth) + " ".repeat(depth) + ")\n";
         }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            writer.append("( ");
+            dumpSubordinates(writer);
+            writer.append(" ) ");
+        }
     }
 
     public static class VectorNode extends ComplexNode {
         @Override
         public String walk(int depth) {
             return " ".repeat(depth) + "[\n" + walkSubordinates(depth) + " ".repeat(depth) + "]\n";
+        }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            writer.append("[ ");
+            dumpSubordinates(writer);
+            writer.append(" ] ");
         }
     }
 
@@ -115,6 +161,28 @@ public class DataStorage {
 
             return out + " ".repeat(depth) + "}\n";
         }
+
+        public HashMap<Node, Node> getMap() {
+            assert(complexVal.size() % 2 == 0); // Make sure there are an even number of nodes in this expression.
+
+            HashMap<Node, Node> map = new HashMap<>();
+            for (int i = 0; i < complexVal.size(); i += 2) {
+                map.put(complexVal.get(i), complexVal.get(i + 1));
+            }
+
+            return map;
+        }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            writer.append("{ ");
+            for (int i = 0; i < complexVal.size(); i += 2) {
+                complexVal.get(i).dump(writer);
+                complexVal.get(i + 1).dump(writer);
+                writer.append(", ");
+            }
+            writer.append(" } ");
+        }
     }
 
     // Nodes represented by single tokens.
@@ -125,6 +193,14 @@ public class DataStorage {
     public static class IdNode extends SimpleNode {
         public String name;
 
+        public IdNode() {
+
+        }
+
+        public IdNode(String name) {
+            this.name = name;
+        }
+
         @Override
         public void finalize(String name) {
             this.name = name;
@@ -134,10 +210,35 @@ public class DataStorage {
         public String walk(int depth) {
             return " ".repeat(depth) + name + '\n';
         }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            writer.append(name + " ");
+        }
+
+        public boolean isNil() {
+            return name.equals("nil");
+        }
+        
+        public boolean isBool() {
+            return name.equals("true") || name.equals("false");
+        }
+
+        public boolean isTrue() {
+            return name.equals("true");
+        }
     }
 
     public static class KeywordNode extends SimpleNode {
         public String key;
+
+        public KeywordNode() {
+            
+        }
+
+        public KeywordNode(String key) {
+            this.key = key;
+        }
 
         @Override
         public void finalize(String key) {
@@ -147,6 +248,11 @@ public class DataStorage {
         @Override
         public String walk(int depth) {
             return " ".repeat(depth) + ':' + key + '\n';
+        }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            writer.append(":" + key + " ");
         }
     }
 
@@ -193,6 +299,11 @@ public class DataStorage {
 
             return out + "\"\n";
         }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            writer.append("\"" + value + "\" ");
+        }
     }
 
     public static class IntNode extends SimpleNode {
@@ -206,6 +317,11 @@ public class DataStorage {
         @Override
         public String walk(int depth) {
             return " ".repeat(depth) + value + "\n";
+        }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            writer.append("" + value + " ");
         }
     }
 
@@ -221,9 +337,14 @@ public class DataStorage {
         public String walk(int depth) {
             return " ".repeat(depth) + value + "\n";
         }
+
+        @Override
+        public void dump(Writer writer) throws IOException {
+            writer.append("" + value + " ");
+        }
     }
 
-    private static Root parse(Reader reader) throws IOException, ParserException, ClassCastException {
+    private static Root load(Reader reader) throws IOException, ParserException, ClassCastException {
         Node frame = new Root();
 
         Stack<Node> stack = new Stack<>();
@@ -381,7 +502,19 @@ public class DataStorage {
                     throw new TokenParsingException(lineno, colno, temp);
                 }
             }
-            else { // Remaining cases are IdNode and KeywordNode, which can include any non-whitespace characters.
+            else if (frame instanceof IdNode) {
+                if (last_c == '-') {
+                    if (c >= '0' && c <= '9') {
+                        frame = new IntNode();
+                    }
+                    else if (c == '.') {
+                        frame = new FloatNode();
+                    }
+                }
+
+                temp += c;
+            }
+            else if (frame instanceof KeywordNode) { // Only remaining case
                 temp += c;
             }
             
@@ -424,31 +557,12 @@ public class DataStorage {
     }
 
     // Same as above but takes a string instead of a reader
-    public static Root parseString(String str) throws Exception {
+    public static Root loads(String str) throws Exception {
         try (StringReader reader = new StringReader(str)) {
-            return parse(reader);
+            return load(reader);
         }
         catch (Exception e) {
             throw e;
         }
-    }
-
-    // Write the contents of the parse tree to a string
-    public static String walk(Node node, int depth) {
-        String out = "";
-
-        if (node instanceof Root) {
-            for (int i = 0; i < depth; i++) {
-                out += '-';
-            }
-
-            out += " ROOT\n";
-
-            for (Node subnode : ((Root) node).complexVal) {
-                out += walk(subnode, depth + 1);
-            }
-        }
-
-        return out;
     }
 }

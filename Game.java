@@ -61,14 +61,17 @@ public class Game {
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
       }
+
       @Override
       public void keyTyped(KeyEvent e) {
       }
+
       @Override
       public void keyPressed(KeyEvent e) {
         KeyBox.this.wasPressed.put(e.getKeyCode(), true);
         KeyBox.this.isPressed.put(e.getKeyCode(), true);
       }
+
       @Override
       public void keyReleased(KeyEvent e) {
         KeyBox.this.isPressed.put(e.getKeyCode(), false);
@@ -101,24 +104,36 @@ public class Game {
       UP, DOWN, LEFT, RIGHT
     };
   }
+  
   // Classes representing specific game events
   public static class TouchEvent extends Event {
   }
+
   public static class InteractEvent extends Event {
     public final Direction fromDirection;
     public InteractEvent(Direction fromDirection) {
       this.fromDirection = fromDirection;
     }
   }
+
   public static class LeaveSquareEvent extends Event {
     public final Direction toDirection;
     public LeaveSquareEvent(Direction toDirection) {
       this.toDirection = toDirection;
     }
   }
+
+  public static class IntersectEvent extends Event {
+    public final Direction fromDirection; // Direction the player came from
+    public IntersectEvent(Direction fromDirection) {
+      this.fromDirection = fromDirection;
+    }
+  }
+
   public static void goToChamber(Chamber goTo, Point dropAt) {
   }
-  public static BlockingQueue dialogueIn;
+
+  public static BlockingQueue<String> dialogueIn;
   // Instance of KeyBox to represent the game state
   public static KeyBox box;
   // Components of the GUI
@@ -300,12 +315,7 @@ public class Game {
 
 
   public static void main(String args[]) throws Exception { // program entry point
-    try{  
-      init();
-      run();
-    }
-    catch(Exception e) {
-      throw e;
-    }
+    init();
+    run();
   }
 }

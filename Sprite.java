@@ -1,9 +1,7 @@
 import javax.naming.OperationNotSupportedException;
-import java.io.*;
 
-public abstract class Sprite {
+public abstract class Sprite implements DS.Storable {
   public boolean visible;
- 
   
   public abstract String getName();
 

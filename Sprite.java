@@ -1,13 +1,27 @@
-import javax.naming.OperationNotSupportedException;
-
-public abstract class Sprite implements DS.Storable {
+public class Sprite implements DS.Storable {
   public boolean visible;
   
-  public abstract String getName();
-
-  public abstract char getSymbol() throws OperationNotSupportedException;
-
-  public abstract void onEvent(Game.Event e);
+  public Template.HandlerMap handlerMap;
   
-  public abstract String getID();
+  public final String name;
+
+  public final Character symbol;
+
+  public Sprite(String name) {
+    this.visible = false;
+    this.name = name;
+    this.symbol = null;
+  }
+
+  public Sprite(String name, Character symbol) {
+    this.visible = true;
+    this.name = name;
+    this.symbol = symbol;
+  }
+
+  public void onEvent(Game.Event e){
+    Template.Handler handler = handlerMap.get(e.eventType);
+
+    handler.accept(e, this);
+  }
 }

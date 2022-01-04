@@ -98,35 +98,29 @@ public class Game {
       return false;
     }
   }
-  // Base class for game-specific events
-  public static abstract class Event {
-    public static enum Direction {
-      UP, DOWN, LEFT, RIGHT
-    };
-  }
   
-  // Classes representing specific game events
-  public static class TouchEvent extends Event {
+  public static enum EventType {
+    IntersectEvent,
+    InteractEvent,
+    TouchEvent,
+    LeaveSquareEvent
   }
 
-  public static class InteractEvent extends Event {
-    public final Direction fromDirection;
-    public InteractEvent(Direction fromDirection) {
-      this.fromDirection = fromDirection;
-    }
+  public static enum Direction {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
   }
 
-  public static class LeaveSquareEvent extends Event {
-    public final Direction toDirection;
-    public LeaveSquareEvent(Direction toDirection) {
-      this.toDirection = toDirection;
-    }
-  }
+  public static class Event {
+    public final EventType eventType;
 
-  public static class IntersectEvent extends Event {
-    public final Direction fromDirection; // Direction the player came from
-    public IntersectEvent(Direction fromDirection) {
-      this.fromDirection = fromDirection;
+    public final Direction direction;
+
+    public Event(EventType eventType, Direction direction) {
+      this.eventType = eventType;
+      this.direction = direction;
     }
   }
 

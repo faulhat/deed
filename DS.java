@@ -109,7 +109,7 @@ public class DS {
     public static class Root extends ComplexNode {
         @Override
         public String walk(int depth) {
-            return " ".repeat(depth) + " ROOT {-\n" + walkSubordinates(depth) + "-}\n";
+            return Repeat.repeat(" ", depth) + " ROOT {-\n" + walkSubordinates(depth) + "-}\n";
         }
 
         @Override
@@ -121,7 +121,7 @@ public class DS {
     public static class ListNode extends ComplexNode {
         @Override
         public String walk(int depth) {
-            return " ".repeat(depth) + "(\n" + walkSubordinates(depth) + " ".repeat(depth) + ")\n";
+            return Repeat.repeat(" " , depth) + "(\n" + walkSubordinates(depth) + Repeat.repeat(" ", depth) + ")\n";
         }
 
         @Override
@@ -135,7 +135,7 @@ public class DS {
     public static class VectorNode extends ComplexNode {
         @Override
         public String walk(int depth) {
-            return " ".repeat(depth) + "[\n" + walkSubordinates(depth) + " ".repeat(depth) + "]\n";
+            return Repeat.repeat(" ", depth) + "[\n" + walkSubordinates(depth) + Repeat.repeat(" ", depth) + "]\n";
         }
 
         @Override
@@ -149,7 +149,7 @@ public class DS {
     public static class MapNode extends ComplexNode {
         @Override
         public String walk(int depth) {
-            String out = " ".repeat(depth) + "{\n";
+            String out = Repeat.repeat(" ", depth) + "{\n";
 
             for (int i = 0; i < complexVal.size(); i += 2) {
                 out += "KEY: " + complexVal.get(i).walk(depth + 1);
@@ -159,7 +159,7 @@ public class DS {
                 }
             }
 
-            return out + " ".repeat(depth) + "}\n";
+            return out + Repeat.repeat(" " , depth) + "}\n";
         }
 
         public HashMap<Node, Node> getMap() {
@@ -208,7 +208,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return " ".repeat(depth) + name + '\n';
+            return Repeat.repeat(" ", depth) + name + '\n';
         }
 
         @Override
@@ -247,7 +247,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return " ".repeat(depth) + ':' + key + '\n';
+            return Repeat.repeat(" ", depth) + ':' + key + '\n';
         }
 
         @Override
@@ -266,7 +266,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            String out = " ".repeat(depth);
+            String out = Repeat.repeat(" ", depth);
 
             if (value.length() > 10) { // We will truncate the string if it is longer than ten characters.
                 for (int i = 0; i < 7; i++) {
@@ -316,7 +316,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return " ".repeat(depth) + value + "\n";
+            return Repeat.repeat(" ", depth) + value + "\n";
         }
 
         @Override
@@ -335,7 +335,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return " ".repeat(depth) + value + "\n";
+            return Repeat.repeat(" ",depth) + value + "\n";
         }
 
         @Override

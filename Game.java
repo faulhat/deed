@@ -194,7 +194,7 @@ public class Game {
       pos.x = Math.min(farRight, pos.x + currentSpeed);
     }
     if ((int)prevPos.x != (int)pos.x || (int)prevPos.y != (int)pos.y){
-         if (test_Chamber.isWall(pos)){
+         if (test_Chamber.matrix[(int)pos.y][(int)pos.x].isWall == true){
             pos = prevPos;
          }
     }
@@ -207,20 +207,20 @@ public class Game {
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
       for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
-        ArrayList<Sprite> s = new ArrayList<Sprite>(test_Chamber.getSquareAt(new Point(j,i)).sprites);
+        ArrayList<Sprite> s = new ArrayList<Sprite>(test_Chamber.matrix[j][i].sprites);
         if (i == trunc_y && j == trunc_x) {
           displayState += "@";
         } 
-        else if(test_Chamber.getSquareAt(new Point(j,i)).isWall){
+        else if(test_Chamber.matrix[j][i].isWall){
           displayState += "|";
         }
-        else if (test_Chamber.getSquareAt(new Point(j,i)).sprites.size() == 0){
+        else if (test_Chamber.matrix[j][i].sprites.size() == 0){
           displayState += " ";
         }   
         else{           
          if (s.get(0) != null){
             if (s.get(0).visible == true){
-               displayState += test_Chamber.getSquareAt(new Point(j,i)).sprites.get(0).getSymbol();
+               displayState += test_Chamber.matrix[j][i].sprites.get(0).symbol;
             }
             else{
                displayState += " ";

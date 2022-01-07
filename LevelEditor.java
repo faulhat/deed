@@ -6,14 +6,17 @@ import java.awt.event.*;
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.event.MouseInputListener;
-
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.naming.OperationNotSupportedException;
 import java.util.concurrent.*;
+import java.lang.InterruptedException;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Map;
+import java.util.HashMap;
 import java.time.Instant;
 import java.util.Arrays;
 import java.time.Duration;
@@ -92,7 +95,10 @@ public class LevelEditor {
           text += "  ";
         }
 
-        text += " ".repeat(depth) + name + '\n';
+        for (int i = 0; i < depth; i++){
+         text+=' ';
+        }
+        text += name + '\n';
         lineno[0]++;
 
         if (!isLeaf && expanded) {
@@ -123,7 +129,7 @@ public class LevelEditor {
 
     public static ArrayList<MenuItem> items;
 
-    public static final int N_LINES = 3;
+    public static final int N_LINES = 2;
 
     public static void init(ArrayList<MenuItem> initItems) {
       items = initItems;
@@ -165,25 +171,52 @@ public class LevelEditor {
   public static boolean isInMenu;
   // String representing level editor state
   private static String displayState;
-  // Dialogue Queue for dialogue testing
+  // Dialogue Queue 
   public static LinkedBlockingQueue<String> dialogueIn;
   // Matrix of chars to store insertion for levels
   public static char[][] matrix = new char[HEIGHT][WIDTH];
   // Class representing menus for insertion of various sprites
   public static ArrayList<ArrayList<ArrayList<Sprite>>> s = new ArrayList<ArrayList<ArrayList<Sprite>>>();
 
-  public static ConcurrentLinkedQueue<String> dialogueInsert;
-
   public static Game.KeyBox box;
-
+  
   // Initialize game state
-  public static void init() throws OperationNotSupportedException {
+  public static void init() throws OperationNotSupportedException, InterruptedException {
     ArrayList<MenuState.MenuItem> ex = new ArrayList<>();
     box = new Game.KeyBox();
     dialogueIn = new LinkedBlockingQueue<String>();
-    DialoguePoint toInsert = new DialoguePoint("Test", "Test", LevelEditor.dialogueIn);
-    ex.add(new MenuState.MenuItem("DialoguePoint", toInsert));
-    ex.add(new MenuState.MenuItem("Exit", toInsert));
+    
+    
+    ArrayList<Object> m = new ArrayList<>();
+    m.add("DialoguePointEx");
+    m.add("Example");
+
+     
+    Template.Initializer inti = (o,h) -> {
+         Sprite s = new Sprite((String)o.remove(0), 'd');
+         s.handlerMap = h;
+         s.uniqueData = o;
+         return s;
+     };
+
+      Template.Handler t = (TouchEvent, dialoguePoint) -> dialogueIn.put((String)dialoguePoint.uniqueData.get(0)),
+         i = (IntersectEvent, dialoguePoint) -> {},
+         i_a = (InteractEvent, dialoguePoint) -> {},
+         l = (LeaveSquareEvent, dialoguePoint) -> {};
+       
+       Template.HandlerMap handlerMap = new Template.HandlerMap();
+       
+       handlerMap.put(Game.EventType.TouchEvent,t);
+       handlerMap.put(Game.EventType.IntersectEvent, i);
+       handlerMap.put(Game.EventType.InteractEvent, i_a);
+       handlerMap.put(Game.EventType.LeaveSquareEvent, l);
+       System.out.println(t);
+       System.out.println(handlerMap.get(Game.EventType.TouchEvent));
+       
+       Template dialoguePoint = new Template("dialoguePoint",inti,handlerMap);
+       Sprite toInsert = dialoguePoint.genSprite(m);
+       ex.add(new MenuState.MenuItem("DialoguePoint", toInsert));
+       ex.add(new MenuState.MenuItem("Exit", toInsert));
 
     for (char[] line : matrix) {
       ArrayList<ArrayList<Sprite>> s_line = new ArrayList<ArrayList<Sprite>>();
@@ -201,10 +234,11 @@ public class LevelEditor {
     textSpriteMenu.setText(baseTextMenu);
     textArea = new JTextArea();
     textArea.setEditable(false);
+    textArea.setFocusable(false);
     textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
-    for (int i = 0; i < HEIGHT; i++) {
+    for (int r = 0; r < HEIGHT; r++) {
       for (int j = 0; j < WIDTH; j++) {
-        matrix[i][j] = ' ';
+        matrix[r][j] = ' ';
       }
     }
     render();
@@ -219,7 +253,7 @@ public class LevelEditor {
     box.frame.setVisible(true);
   }
 
-  public static void update(double delta) {
+  public static void update(double delta) throws InterruptedException {
     // Multiply the time delta between now and the last update by the SPEED constant
     // to calculate the offset
     // we should move the player by on this update (if he moves).
@@ -245,9 +279,9 @@ public class LevelEditor {
       for (int j = (int)Math.max(pos.x-1.0,0.0); j < (int)Math.min(farBottom, pos.x+1.0); j++){
         ArrayList<Sprite> s_at = s.get(i).get(j);
         if (s_at.size() != 0){
-          Game.TouchEvent t = new Game.TouchEvent();
+          Game.Event e = new Game.Event(Game.EventType.TouchEvent, Game.Direction.UP);
           for (Sprite sp : s_at){
-            sp.onEvent(t);
+            sp.onEvent(e);
           }
         }
       }
@@ -316,18 +350,15 @@ public class LevelEditor {
   public static void render() throws OperationNotSupportedException {
     displayState = MenuState.render();
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
-    if (dialogueIn.size() == 0) {
-      for (int i = 0; i < HEIGHT - 1; i++) { // Vertical cursor coordinate (y)
+    for (int i = 0; i < HEIGHT - 1; i++) { // Vertical cursor coordinate (y)
         for (int j = 0; j < WIDTH - 1; j++) { // Horizontal cursor coordinate (x)
           ArrayList<Sprite> s_at_point = s.get(i).get(j);
           if (i == trunc_y && j == trunc_x) {
             displayState += "@";
-          } else if (s_at_point.size() != 0) {
-            for (Sprite sp : s_at_point) {
-              if (sp.visible) {
-                displayState += sp.getSymbol();
-              }
-            }
+          } else if (s_at_point.size() != 0){ 
+            if (s_at_point.get(0).visible) {
+               displayState += s_at_point.get(0).symbol;
+             }
           } else {
             displayState += matrix[i][j];
           }
@@ -335,6 +366,8 @@ public class LevelEditor {
         }
         displayState += "\n\n";
       }
+
+    if (dialogueIn.size() == 0) {
       displayState += "+";
       for (int i = 0; i < DIALOGUE_WIDTH * 2 + 1; i++) { // Horizontal cursor coordinate (x)
         displayState += "-";
@@ -354,26 +387,8 @@ public class LevelEditor {
       }
       displayState += "+";
     } else {
-      String[] split_in = dialogueIn.remove().split("");
+      String[] split_in = ((String)dialogueIn.remove()).split("");
       String[][] to_insert = formatString(split_in);
-      for (int i = 0; i < HEIGHT - 1; i++) { // Vertical cursor coordinate (y)
-        for (int j = 0; j < WIDTH - 1; j++) { // Horizontal cursor coordinate (x)
-          ArrayList<Sprite> s_at_point = s.get(i).get(j);
-          if (i == trunc_y && j == trunc_x) {
-            displayState += "@";
-          } else if (s_at_point.size() != 0) {
-            for (Sprite sp : s_at_point) {
-              if (sp.visible) {
-                displayState += sp.getSymbol();
-              }
-            }
-          } else {
-            displayState += matrix[i][j];
-          }
-          displayState += " ";
-        }
-        displayState += "\n\n";
-      }
       displayState += "+";
       for (int i = 0; i < DIALOGUE_WIDTH * 2 + 1; i++) { // Horizontal cursor coordinate (x)
         displayState += "-";
@@ -428,3 +443,5 @@ public class LevelEditor {
     run();
   }
 }
+
+

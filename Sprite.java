@@ -58,7 +58,7 @@ public class Sprite implements DS.Storable {
     DS.Node vis_key = new DS.KeywordNode(":visible"),
         visible = new DS.IdNode(isVis),
         type_key = new DS.KeywordNode(":spriteType"),
-        type = new DS.IdNode("DialoguePoint"),
+        type = new DS.IdNode("Dialogue_Point"),
         name_key = new DS.KeywordNode(":name"),
         name = new DS.IdNode(this.name),
         location_key = new DS.KeywordNode(":location"),
@@ -92,6 +92,7 @@ public class Sprite implements DS.Storable {
   }
   public void load(DS.Node node) throws LoadingException{
     DS.MapNode mNode = (DS.MapNode)node;
+    this.uniqueData = new ArrayList<>();
     try{
       Map<String, DS.Node> map = mNode.getMap();
       DS.Node valNode = map.get(":name");
@@ -109,17 +110,27 @@ public class Sprite implements DS.Storable {
       else{
         throw new LoadingException("Sprite", "IdNode not true/false resolvable");
       }
-      DS.IdNode spriteTypeNode = (DS.IdNode)map.get(":type");
+      DS.IdNode spriteTypeNode = (DS.IdNode)map.get(":spriteType");
+      System.out.println(spriteTypeNode);
       String spriteType = spriteTypeNode.name;
       for (Game.SpriteType s : Game.SpriteType.values()){
-        if (spriteType.equals(s.toString())){
+        if (spriteType.equals(s.name())){
           type = s;
         }
       }
       this.symbol = Game.spriteTypeBindings.get(type).symbol;
-      DS.ListNode uniquesList = (DS.ListNode)map.get(":unique");
+      DS.ListNode uniquesList = (DS.ListNode)map.get(":uniqueData");
+      System.out.println(uniquesList);
       for (DS.Node n : uniquesList.complexVal){
-        uniqueData.add(((DS.UniqueNode)n).data);
+        if (n instanceof DS.IdNode){
+          uniqueData.add(((DS.IdNode)n).name);
+        }
+        else if (n instanceof DS.UniqueNode){
+          uniqueData.add(((DS.UniqueNode)n).data);
+        }
+        else{
+          throw new DS.MapNode.NonDeserializableException();
+        }
       }
     }
     catch(DS.MapNode.NonDeserializableException d){
@@ -131,5 +142,14 @@ public class Sprite implements DS.Storable {
 
   public Sprite(DS.Node node) throws LoadingException {
     load(node);
+  }
+  public boolean equals(Sprite toCompare){
+    if ((this.location == null && toCompare.location == null || this.location.equals(toCompare.location)) && this.name.equals(toCompare.name) && this.type == toCompare.type 
+    && this.uniqueData.equals(toCompare.uniqueData)){
+      return true;
+    }
+    else{
+      return false;
+    }
   }
 }

@@ -1,1 +1,1 @@
-{ :visible true , :spriteType DialoguePoint , :name Test , :location null , :uniqueData ( test  ) ,  } 
+{ :visible true , :spriteType Dialogue_Point , :name Test , :location null , :uniqueData ( test  ) ,  } 

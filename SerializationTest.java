@@ -31,5 +31,6 @@ public class SerializationTest{
         Sprite deserializedSprite = new Sprite((DS.MapNode) firstSubNode);
         System.out.println(deserializedSprite.name);
         System.out.println(sp.equals(deserializedSprite));
+        
     }
 }

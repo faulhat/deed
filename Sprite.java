@@ -111,7 +111,6 @@ public class Sprite implements DS.Storable {
         throw new LoadingException("Sprite", "IdNode not true/false resolvable");
       }
       DS.IdNode spriteTypeNode = (DS.IdNode)map.get(":spriteType");
-      System.out.println(spriteTypeNode);
       String spriteType = spriteTypeNode.name;
       for (Game.SpriteType s : Game.SpriteType.values()){
         if (spriteType.equals(s.name())){
@@ -143,6 +142,8 @@ public class Sprite implements DS.Storable {
   public Sprite(DS.Node node) throws LoadingException {
     load(node);
   }
+  //Custom equals method
+  //Just checks if all parameters are equal
   public boolean equals(Sprite toCompare){
     if ((this.location == null && toCompare.location == null || this.location.equals(toCompare.location)) && this.name.equals(toCompare.name) && this.type == toCompare.type 
     && this.uniqueData.equals(toCompare.uniqueData)){

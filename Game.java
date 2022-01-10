@@ -12,6 +12,7 @@ import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.naming.OperationNotSupportedException;
 import java.util.concurrent.*;
+import java.util.logging.Handler;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.time.Instant;
@@ -26,15 +27,13 @@ public class Game {
   // Width/height of text area for game display (in "tiles," the smallest units
   // the player can visibly move)
   // (Tiles are 2x2 chars for now. See render() for implementation)
-  public static final int WIDTH = 10;
-  public static final int HEIGHT = 12;
+  public static final int WIDTH = 30;
+  public static final int HEIGHT = 30;
   public static final int DIALOGUE_HEIGHT = 4;
   public static final int DIALOGUE_WIDTH = WIDTH-2;
   
   
- 
-  //Chamber for testing
-  public static final Chamber test_Chamber = new Chamber();
+  
   // Speed of player
   public static final double SPEED = 0.015;
   // Thomas: This is a class representing a handler for key presses.
@@ -111,7 +110,11 @@ public class Game {
     UP,
     DOWN,
     LEFT,
-    RIGHT
+    RIGHT,
+    LEFT_UP,
+    LEFT_DOWN,
+    RIGHT_UP,
+    RIGHT_DOWN
   }
   
   public static enum SpriteType{
@@ -131,15 +134,17 @@ public class Game {
   }
 
   public static void goToChamber(Chamber goTo, Point dropAt) {
+    pos = new Point2D.Double(dropAt.getX(),dropAt.getY());
+    currentChamber = goTo;
   }
   public static Template initDialoguePoint(){
     
-    Template.Initializer inti = (o,h) -> {
-      Sprite s = new Sprite((String)o.remove(0), 'd');
-      s.handlerMap = h;
-      s.uniqueData = o;
-      s.type = SpriteType.Dialogue_Point;
-      return s;
+    Template.Initializer inti = (uniqueData,handlerMap) -> {
+      Sprite iniSprite = new Sprite((String)uniqueData.remove(0), 'd');
+      iniSprite.handlerMap = handlerMap;
+      iniSprite.uniqueData = uniqueData;
+      iniSprite.type = SpriteType.Dialogue_Point;
+      return iniSprite;
     };
 
    Template.Handler t = (TouchEvent, dialoguePoint) -> LevelEditor.dialogueIn.put((String)dialoguePoint.uniqueData.get(0)),
@@ -156,11 +161,34 @@ public class Game {
     Template dialoguePoint = new Template("dialoguePoint",'d', inti,handlerMap);
     return dialoguePoint;
   }
+  public static Template initExit(){
+    Template.Initializer init = (uniqueData, handlerMap) -> {
+      Sprite iniSprite = new Sprite((String)uniqueData.remove(0), 'd');
+      iniSprite.handlerMap = handlerMap;
+      iniSprite.uniqueData = uniqueData;
+      iniSprite.type = SpriteType.Exit;
+      return iniSprite;
+    };
+    Template.Handler touchHandler = (TouchEvent, exit) -> {},
+      intersectHandler = (IntersectEvent, exit) -> {},
+      interactHandler = (InteractEvent, exit) -> {},
+      leaveHandler = (LeaveSquareEvent, exit) -> {Game.goToChamber(((Chamber)exit.uniqueData.get(0)), 
+      ((Chamber)exit.uniqueData.get(0)).directionDropGetter.get(Game.playerDirection));};
+    Template.HandlerMap handlerMap = new Template.HandlerMap();
+    handlerMap.put(EventType.TouchEvent, touchHandler);
+    handlerMap.put(EventType.IntersectEvent, intersectHandler);
+    handlerMap.put(EventType.InteractEvent, interactHandler);
+    handlerMap.put(EventType.LeaveSquareEvent, leaveHandler);
+    Template exit = new Template("exit", 'e', init, handlerMap);
+    return exit;
+  }
   public static HashMap<SpriteType, Template> genBindings(){
     HashMap<SpriteType, Template> spriteTypeBindings = new HashMap<SpriteType, Template>();
     spriteTypeBindings.put(SpriteType.Dialogue_Point,initDialoguePoint());
     return spriteTypeBindings;
   }
+  //chamber which the player is currently in
+  public static Chamber currentChamber = new Chamber(1);
   //DialoguePoint template
   public static Template DialoguePoint = initDialoguePoint();
   // Map of spriteType to template
@@ -175,6 +203,8 @@ public class Game {
   public static Point2D.Double pos;
   // Game display state
   private static String displayState;
+  //Direction in which the player is currently going
+  public static Direction playerDirection;
   // Initialize game state
   public static void init() throws OperationNotSupportedException, FileNotFoundException, InterruptedException{
     
@@ -208,32 +238,41 @@ public class Game {
         goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
         goingRight = box.getResetKey(KeyEvent.VK_RIGHT);
     if (goingUp && goingLeft && !goingDown && !goingRight) { // Up and down would cancel each other out, as would left
-                                                             // and right
+      playerDirection = Direction.LEFT_UP;                                                       // and right
       pos.x = Math.max(0.0, pos.x - diagInterval);
       pos.y = Math.max(0.0, pos.y - diagInterval);
+      
     } else if (goingDown && goingLeft && !goingUp && !goingRight) {
+      playerDirection = Direction.LEFT_DOWN;
       pos.x = Math.max(0.0, pos.x - diagInterval);
       pos.y = Math.min(farBottom, pos.y + diagInterval);
+      
     } else if (goingUp && goingRight && !goingDown && !goingLeft) {
+      playerDirection = Direction.RIGHT_UP;
       pos.x = Math.min(farRight, pos.x + diagInterval);
       pos.y = Math.max(0.0, pos.y - diagInterval);
     } else if (goingDown && goingRight && !goingUp && !goingLeft) {
+      playerDirection = Direction.RIGHT_DOWN;
       pos.x = Math.min(farRight, pos.x + diagInterval);
       pos.y = Math.min(farBottom, pos.y + diagInterval);
     } else if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal                          
                                         // directions.
+      playerDirection = Direction.UP;
       pos.y = Math.max(0.0, pos.y - currentSpeed);
        
     } else if (goingDown && !goingUp) {
+      playerDirection = Direction.UP;
       pos.y = Math.min(farBottom, pos.y + currentSpeed);
      
     } else if (goingLeft && !goingRight) {
+      playerDirection = Direction.LEFT;
       pos.x = Math.max(0.0, pos.x - currentSpeed);
     } else if (goingRight && !goingLeft) {
+      playerDirection = Direction.RIGHT;
       pos.x = Math.min(farRight, pos.x + currentSpeed);
     }
     if ((int)prevPos.x != (int)pos.x || (int)prevPos.y != (int)pos.y){
-         if (test_Chamber.matrix[(int)pos.y][(int)pos.x].isWall == true){
+         if (currentChamber.matrix[(int)pos.y][(int)pos.x].isWall == true){
             pos = prevPos;
          }
     }
@@ -246,20 +285,21 @@ public class Game {
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
       for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
-        ArrayList<Sprite> s = new ArrayList<Sprite>(test_Chamber.matrix[j][i].sprites);
+        System.out.println(i + " " + j);
+        ArrayList<Sprite> s = new ArrayList<Sprite>(currentChamber.matrix[j][i].sprites);
         if (i == trunc_y && j == trunc_x) {
           displayState += "@";
         } 
-        else if(test_Chamber.matrix[j][i].isWall){
+        else if(currentChamber.matrix[j][i].isWall){
           displayState += "|";
         }
-        else if (test_Chamber.matrix[j][i].sprites.size() == 0){
+        else if (currentChamber.matrix[j][i].sprites.size() == 0){
           displayState += " ";
         }   
         else{           
          if (s.get(0) != null){
             if (s.get(0).visible == true){
-               displayState += test_Chamber.matrix[j][i].sprites.get(0).symbol;
+               displayState += currentChamber.matrix[j][i].sprites.get(0).symbol;
             }
             else{
                displayState += " ";

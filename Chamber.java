@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.awt.geom.Point2D;
 import java.io.*;
 import java.util.HashMap;
-
+import java.util.EnumMap;
 /*
  * Thomas: This class represents an overworld chamber
  * It has a matrix of booleans. true elements represent walls
@@ -98,13 +98,18 @@ public class Chamber implements DS.Storable {
       return map;
     }
   }
-
+  
   public static final int width = 40;
 
   public static final int height = 30;
 
   public Square[][] matrix;
-
+  
+  public Point fromUpDrop,
+                        fromDownDrop,
+                        fromLeftDrop,
+                        fromRightDrop;
+  public EnumMap<Game.Direction, Point> directionDropGetter;
   public static class ChamberLoadingException extends LoadingException {
     public ChamberLoadingException(String complaint) {
       super("Chamber", complaint);
@@ -113,6 +118,21 @@ public class Chamber implements DS.Storable {
 
   public Chamber() {
     this.matrix = new Square[width][height];
+    this.directionDropGetter = new EnumMap<>(Game.Direction.class);
+    /*Default drop positions are at halfway up the chamber at left/right edge for left/right entry
+      respectively,
+      and halfway acroos at top/bottom for top and bottom
+    */
+    int y_horizontal = width/2;
+    int x_horizontal = height/2;
+    fromUpDrop = new Point(0, x_horizontal); 
+    fromDownDrop = new Point(height-1, x_horizontal);
+    fromLeftDrop = new Point(y_horizontal, 0);
+    fromRightDrop = new Point(y_horizontal, width-1);
+    directionDropGetter.put(Game.Direction.UP, fromUpDrop);
+    directionDropGetter.put(Game.Direction.DOWN, fromDownDrop);
+    directionDropGetter.put(Game.Direction.LEFT, fromLeftDrop);
+    directionDropGetter.put(Game.Direction.RIGHT, fromRightDrop);
   }
 
   public Chamber(DS.Node node) throws LoadingException {
@@ -138,10 +158,10 @@ public class Chamber implements DS.Storable {
     }
   }
 
-  public Chamber(int width, int height) {
-    matrix = new Square[height][width];
-    for (int i = 0; i < height; i++) {
-      for (int j = 0; j < width; j++) {
+  public Chamber(int width) {
+    matrix = new Square[this.height][this.width];
+    for (int i = 0; i < this.height; i++) {
+      for (int j = 0; j < this.width; j++) {
         ArrayList<Sprite> s = new ArrayList<Sprite>();
         Square toAdd = new Square(false, s);
         matrix[i][j] = toAdd;
@@ -161,7 +181,7 @@ public class Chamber implements DS.Storable {
     }
   }
 
-  // toString for testing only thomas dont get mad
+  // toString for testing only 
   public String toString() {
     String toReturn = "";
     for (int i = 0; i < height; i++) {

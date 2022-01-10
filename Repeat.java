@@ -6,4 +6,8 @@ public class Repeat{
       }
       return toReturn;
    }
+
+   public static String repeat2(String s, int count) {
+      return repeat(s, count * 2);
+   }
 }

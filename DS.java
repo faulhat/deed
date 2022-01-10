@@ -63,7 +63,7 @@ public class DS {
 
         @Override
         public String toString() {
-            return walk(1);
+            return walk(0);
         }
 
         // Print out the parse tree
@@ -109,7 +109,7 @@ public class DS {
     public static class Root extends ComplexNode {
         @Override
         public String walk(int depth) {
-            return Repeat.repeat(" ", depth) + " ROOT {-\n" + walkSubordinates(depth) + "-}\n";
+            return Repeat.repeat2(" ", depth) + "ROOT {\n" + walkSubordinates(depth) + Repeat.repeat2(" ", depth) + "}\n";
         }
 
         @Override
@@ -119,9 +119,12 @@ public class DS {
     }
 
     public static class ListNode extends ComplexNode {
+        public ListNode(){
+            super();
+        }
         @Override
         public String walk(int depth) {
-            return Repeat.repeat(" " , depth) + "(\n" + walkSubordinates(depth) + Repeat.repeat(" ", depth) + ")\n";
+            return Repeat.repeat2(" " , depth) + "(\n" + walkSubordinates(depth) + Repeat.repeat2(" ", depth) + ")\n";
         }
 
         @Override
@@ -135,7 +138,7 @@ public class DS {
     public static class VectorNode extends ComplexNode {
         @Override
         public String walk(int depth) {
-            return Repeat.repeat(" ", depth) + "[\n" + walkSubordinates(depth) + Repeat.repeat(" ", depth) + "]\n";
+            return Repeat.repeat2(" ", depth) + "[\n" + walkSubordinates(depth) + Repeat.repeat2(" ", depth) + "]\n";
         }
 
         @Override
@@ -147,27 +150,46 @@ public class DS {
     }
 
     public static class MapNode extends ComplexNode {
+        public static class NonDeserializableException extends Exception {
+            public NonDeserializableException() {
+                super("Error: this data could not be deserialized!");
+            }
+        }
+
         @Override
         public String walk(int depth) {
-            String out = Repeat.repeat(" ", depth) + "{\n";
+            String out = Repeat.repeat2(" ", depth) + "MAP {\n";
 
             for (int i = 0; i < complexVal.size(); i += 2) {
-                out += "KEY: " + complexVal.get(i).walk(depth + 1);
+                out += Repeat.repeat2(" ", depth + 1) + "KEY:\n" + complexVal.get(i).walk(depth + 2);
 
                 if (complexVal.size() > i + 1) {
-                    out += "VALUE: " + complexVal.get(i).walk(depth + 1);
+                    out += Repeat.repeat2(" ", depth + 1) + "VALUE:\n" + complexVal.get(i + 1).walk(depth + 2);
                 }
             }
 
-            return out + Repeat.repeat(" " , depth) + "}\n";
+            return out + Repeat.repeat2(" ", depth) + "}\n";
         }
 
-        public HashMap<Node, Node> getMap() {
+        public HashMap<String, Node> getMap() throws NonDeserializableException {
             assert(complexVal.size() % 2 == 0); // Make sure there are an even number of nodes in this expression.
 
-            HashMap<Node, Node> map = new HashMap<>();
+            HashMap<String, Node> map = new HashMap<>();
             for (int i = 0; i < complexVal.size(); i += 2) {
-                map.put(complexVal.get(i), complexVal.get(i + 1));
+                Node key = complexVal.get(i), value = complexVal.get(i + 1);
+
+                if (key instanceof StringNode) {
+                    map.put(((StringNode) key).value, value);
+                }
+                else if (key instanceof IdNode) {
+                    map.put(((IdNode) key).name, value);
+                }
+                else if (key instanceof KeywordNode) {
+                    map.put(":" + ((KeywordNode) key).key, value);
+                }
+                else {
+                    throw new NonDeserializableException();
+                }
             }
 
             return map;
@@ -189,7 +211,34 @@ public class DS {
     public static abstract class SimpleNode extends Node {
         public abstract void finalize(String s);
     }
+    // Node for serialization of unique classes
+    public static class UniqueNode extends SimpleNode{
+        public Object data;
+        public UniqueNode(){
 
+        }
+        public UniqueNode(Object data){
+            this.data = data;
+        }
+        @Override
+        public void finalize(String s){
+            this.data = (Object)s;
+        }
+        public String walk(int depth){
+            return Repeat.repeat2(" ", depth) + data + '\n';
+        }
+        public void dump(Writer writer) throws IOException{
+            System.out.println(data);
+            if (!(data instanceof String)){
+                writer.append(' ' + data.toString());
+            }
+            else{
+                writer.append(' ' + (String)data);
+            }
+        }   
+        
+        
+    }
     public static class IdNode extends SimpleNode {
         public String name;
 
@@ -208,7 +257,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return Repeat.repeat(" ", depth) + name + '\n';
+            return Repeat.repeat2(" ", depth) + name + '\n';
         }
 
         @Override
@@ -247,12 +296,12 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return Repeat.repeat(" ", depth) + ':' + key + '\n';
+            return Repeat.repeat2(" ", depth) + key + '\n';
         }
 
         @Override
         public void dump(Writer writer) throws IOException {
-            writer.append(":" + key + " ");
+            writer.append(key + " ");
         }
     }
 
@@ -266,7 +315,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            String out = Repeat.repeat(" ", depth);
+            String out = Repeat.repeat2(" ", depth);
 
             if (value.length() > 10) { // We will truncate the string if it is longer than ten characters.
                 for (int i = 0; i < 7; i++) {
@@ -316,7 +365,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return Repeat.repeat(" ", depth) + value + "\n";
+            return Repeat.repeat2(" ", depth) + value + "\n";
         }
 
         @Override
@@ -335,7 +384,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return Repeat.repeat(" ",depth) + value + "\n";
+            return Repeat.repeat2(" ",depth) + value + "\n";
         }
 
         @Override
@@ -344,7 +393,7 @@ public class DS {
         }
     }
 
-    private static Root load(Reader reader) throws IOException, ParserException, ClassCastException {
+    public static Root load(Reader reader) throws IOException, ParserException, ClassCastException {
         Node frame = new Root();
 
         Stack<Node> stack = new Stack<>();

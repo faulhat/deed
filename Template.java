@@ -38,19 +38,21 @@ public class Template {
 
     // Name for this template so that it can be referred to in debugging and in the level editor.
     public final String name;
-
+    //Symbol which sprite instances created by a given instance will use
+    public final char symbol;
     // A BiFunction which takes initial data and this template's handlerMap and generates a new Sprite.
     public Initializer initializer;
 
     public HandlerMap handlerMap;
 
-    public Template(String name, Initializer initializer, HandlerMap handlerMap) {
+    public Template(String name, char symbol, Initializer initializer, HandlerMap handlerMap) {
         this.name = name;
+        this.symbol = symbol;
         this.initializer = initializer;
         this.handlerMap = handlerMap;
     }
     public Template(){
-        this(null,null,null);
+        this(null,' ', null,null);
     }
 
     // Utility method to generate a new sprite from this template

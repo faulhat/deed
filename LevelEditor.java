@@ -1,27 +1,15 @@
-import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.awt.Font;
-import java.awt.FlowLayout;
 import java.awt.event.*;
-import javax.swing.JFrame;
 import javax.swing.JTextArea;
-import javax.swing.event.MouseInputListener;
 import javax.swing.JMenuBar;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 import javax.naming.OperationNotSupportedException;
 import java.util.concurrent.*;
 import java.lang.InterruptedException;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.Map;
-import java.util.HashMap;
 import java.time.Instant;
 import java.util.Arrays;
 import java.time.Duration;
-import java.io.*;
-import java.security.Key;
 
 public class LevelEditor {
 
@@ -192,31 +180,11 @@ public class LevelEditor {
     m.add("Example");
 
      
-    Template.Initializer inti = (o,h) -> {
-         Sprite s = new Sprite((String)o.remove(0), 'd');
-         s.handlerMap = h;
-         s.uniqueData = o;
-         return s;
-     };
-
-      Template.Handler t = (TouchEvent, dialoguePoint) -> dialogueIn.put((String)dialoguePoint.uniqueData.get(0)),
-         i = (IntersectEvent, dialoguePoint) -> {},
-         i_a = (InteractEvent, dialoguePoint) -> {},
-         l = (LeaveSquareEvent, dialoguePoint) -> {};
-       
-       Template.HandlerMap handlerMap = new Template.HandlerMap();
-       
-       handlerMap.put(Game.EventType.TouchEvent,t);
-       handlerMap.put(Game.EventType.IntersectEvent, i);
-       handlerMap.put(Game.EventType.InteractEvent, i_a);
-       handlerMap.put(Game.EventType.LeaveSquareEvent, l);
-       System.out.println(t);
-       System.out.println(handlerMap.get(Game.EventType.TouchEvent));
-       
-       Template dialoguePoint = new Template("dialoguePoint",inti,handlerMap);
-       Sprite toInsert = dialoguePoint.genSprite(m);
-       ex.add(new MenuState.MenuItem("DialoguePoint", toInsert));
-       ex.add(new MenuState.MenuItem("Exit", toInsert));
+    Template dialoguePoint = Game.initDialoguePoint();
+    Sprite toInsert = dialoguePoint.genSprite(m);
+    System.out.println(toInsert);
+    ex.add(new MenuState.MenuItem("DialoguePoint", toInsert));
+    ex.add(new MenuState.MenuItem("Exit", toInsert));
 
     for (char[] line : matrix) {
       ArrayList<ArrayList<Sprite>> s_line = new ArrayList<ArrayList<Sprite>>();
@@ -261,7 +229,7 @@ public class LevelEditor {
     // If we use WIDTH and HEIGHT as our bounds, we can end up a tile off the
     // display to the right or bottom.
     double farRight = (double) WIDTH - 1.0;
-    double farBottom = (double) HEIGHT - 1.0;
+    double farBottom = (double) HEIGHT - 2.0;
     
     boolean goingUp = box.getResetKey(KeyEvent.VK_UP),
         goingDown = box.getResetKey(KeyEvent.VK_DOWN),
@@ -275,8 +243,8 @@ public class LevelEditor {
         Ctrl = box.getResetKey(KeyEvent.VK_CONTROL),
         select = box.getResetKey(KeyEvent.VK_S),
         delete = box.getResetKey(KeyEvent.VK_BACK_SPACE);
-    for (int i = (int)Math.max(pos.y-1,0.0); i < (int)Math.min(farRight,pos.y+1.0); i++){
-      for (int j = (int)Math.max(pos.x-1.0,0.0); j < (int)Math.min(farBottom, pos.x+1.0); j++){
+    for (int i = (int)Math.max(pos.y-1,0.0); i <= (int)Math.min(farRight,pos.y+1.0); i++){
+      for (int j = (int)Math.max(pos.x-1.0,0.0); j <= (int)Math.min(farBottom, pos.x+1.0); j++){
         ArrayList<Sprite> s_at = s.get(i).get(j);
         if (s_at.size() != 0){
           Game.Event e = new Game.Event(Game.EventType.TouchEvent, Game.Direction.UP);
@@ -310,7 +278,7 @@ public class LevelEditor {
       
       if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal                          
                                         // directions.
-        pos.y = Math.max(0.0, pos.y - currentSpeed);
+        pos.y = Math.max(1.0, pos.y - currentSpeed);
      
       } else if (goingDown && !goingUp) {
         pos.y = Math.min(farBottom, pos.y + currentSpeed);

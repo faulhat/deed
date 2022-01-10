@@ -38,41 +38,45 @@ public class Chamber implements DS.Storable {
       this.sprites = new ArrayList<>();
       this.sprites.addAll(sprites);
     }
-
+    //Method to deserialize from node
     @Override
     public void load(DS.Node node) throws LoadingException {
-      if (!(node instanceof DS.MapNode)) {
-        throw new SquareLoadingException("Can only take a map node.");
-      }
+      try{  
+        if (!(node instanceof DS.MapNode)) {
+          throw new SquareLoadingException("Can only take a map node.");
+        }
 
-      HashMap<DS.Node, DS.Node> map = ((DS.MapNode) node).getMap();
-      DS.KeywordNode isWallKeyNode = new DS.KeywordNode("isWall");
-      if (!map.containsKey(isWallKeyNode)) {
-        throw new SquareLoadingException("No isWall boolean found.");
-      }
+        HashMap<String, DS.Node> map = ((DS.MapNode) node).getMap();
+        DS.KeywordNode isWallKeyNode = new DS.KeywordNode("isWall");
+        if (!map.containsKey(isWallKeyNode)) {
+          throw new SquareLoadingException("No isWall boolean found.");
+        }
 
-      DS.Node isWallValNode = map.get(isWallKeyNode);
-      if (!(isWallValNode instanceof DS.IdNode && ((DS.IdNode) isWallValNode).isBool())) {
-        throw new SquareLoadingException("isWall parameter is invalid.");
-      }
+        DS.Node isWallValNode = map.get(isWallKeyNode);
+        if (!(isWallValNode instanceof DS.IdNode && ((DS.IdNode) isWallValNode).isBool())) {
+          throw new SquareLoadingException("isWall parameter is invalid.");
+        }
 
-      isWall = ((DS.IdNode) isWallValNode).isTrue();
+        isWall = ((DS.IdNode) isWallValNode).isTrue();
 
-      DS.KeywordNode spritesKeyNode = new DS.KeywordNode("sprites");
-      if (!map.containsKey(spritesKeyNode)) {
-        throw new SquareLoadingException("No sprite list found.");
-      }
+        DS.KeywordNode spritesKeyNode = new DS.KeywordNode("sprites");
+        if (!map.containsKey(spritesKeyNode)) {
+          throw new SquareLoadingException("No sprite list found.");
+        }
 
-      DS.Node spritesValNode = map.get(spritesKeyNode);
-      if (!(spritesValNode instanceof DS.VectorNode)) {
-        throw new SquareLoadingException("sprites parameter is invalid.");
-      }
+        DS.Node spritesValNode = map.get(spritesKeyNode);
+        if (!(spritesValNode instanceof DS.VectorNode)) {
+          throw new SquareLoadingException("sprites parameter is invalid.");
+        }
 
-      for (DS.Node spriteNode : ((DS.VectorNode) spritesValNode).complexVal) {
-        sprites.add(new Sprite(spriteNode));
+        for (DS.Node spriteNode : ((DS.VectorNode) spritesValNode).complexVal) {
+          sprites.add(new Sprite(spriteNode));
+        }
+      }catch(DS.MapNode.NonDeserializableException e){
+        System.out.println("Error: Nondeserializable");
       }
     }
-
+    //Method to serialize a chamber
     @Override
     public DS.MapNode dump() {
       DS.MapNode map = new DS.MapNode();

@@ -13,6 +13,7 @@ import javax.swing.JTextArea;
 import javax.naming.OperationNotSupportedException;
 import java.util.concurrent.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.time.Instant;
 import java.time.Duration;
 import java.io.*;
@@ -30,7 +31,7 @@ public class Game {
   public static final int DIALOGUE_HEIGHT = 4;
   public static final int DIALOGUE_WIDTH = WIDTH-2;
   
- 
+  
  
   //Chamber for testing
   public static final Chamber test_Chamber = new Chamber();
@@ -112,6 +113,11 @@ public class Game {
     LEFT,
     RIGHT
   }
+  
+  public static enum SpriteType{
+    Dialogue_Point,
+    Exit
+  }
 
   public static class Event {
     public final EventType eventType;
@@ -126,6 +132,39 @@ public class Game {
 
   public static void goToChamber(Chamber goTo, Point dropAt) {
   }
+  public static Template initDialoguePoint(){
+    
+    Template.Initializer inti = (o,h) -> {
+      Sprite s = new Sprite((String)o.remove(0), 'd');
+      s.handlerMap = h;
+      s.uniqueData = o;
+      s.type = SpriteType.Dialogue_Point;
+      return s;
+    };
+
+   Template.Handler t = (TouchEvent, dialoguePoint) -> LevelEditor.dialogueIn.put((String)dialoguePoint.uniqueData.get(0)),
+      i = (IntersectEvent, dialoguePoint) -> {},
+      i_a = (InteractEvent, dialoguePoint) -> {},
+      l = (LeaveSquareEvent, dialoguePoint) -> {};
+    
+    Template.HandlerMap handlerMap = new Template.HandlerMap();
+    
+    handlerMap.put(Game.EventType.TouchEvent,t);
+    handlerMap.put(Game.EventType.IntersectEvent, i);
+    handlerMap.put(Game.EventType.InteractEvent, i_a);
+    handlerMap.put(Game.EventType.LeaveSquareEvent, l);
+    Template dialoguePoint = new Template("dialoguePoint",'d', inti,handlerMap);
+    return dialoguePoint;
+  }
+  public static HashMap<SpriteType, Template> genBindings(){
+    HashMap<SpriteType, Template> spriteTypeBindings = new HashMap<SpriteType, Template>();
+    spriteTypeBindings.put(SpriteType.Dialogue_Point,initDialoguePoint());
+    return spriteTypeBindings;
+  }
+  //DialoguePoint template
+  public static Template DialoguePoint = initDialoguePoint();
+  // Map of spriteType to template
+  public static HashMap<SpriteType, Template> spriteTypeBindings = genBindings(); 
 
   public static BlockingQueue<String> dialogueIn;
   // Instance of KeyBox to represent the game state

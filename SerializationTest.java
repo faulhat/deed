@@ -1,10 +1,8 @@
 import java.util.ArrayList;
 import java.io.FileWriter;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
+
 public class SerializationTest{
     public static void main(String[] args) throws Exception {
         ArrayList<Object> s = new ArrayList<>();

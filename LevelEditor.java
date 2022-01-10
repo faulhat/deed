@@ -188,7 +188,7 @@ public class LevelEditor {
 
     for (char[] line : matrix) {
       ArrayList<ArrayList<Sprite>> s_line = new ArrayList<ArrayList<Sprite>>();
-      for (char c : line) {
+      for (int i = 0; i < line.length; i++) {
         ArrayList<Sprite> s_at = new ArrayList<Sprite>();
         s_line.add(s_at);
       }

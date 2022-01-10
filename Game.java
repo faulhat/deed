@@ -1,3 +1,4 @@
+
 /*
  * Thomas: Main driver class that handles game state and runs the game
  * License: free as in freedom
@@ -12,12 +13,12 @@ import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.naming.OperationNotSupportedException;
 import java.util.concurrent.*;
-import java.util.logging.Handler;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.time.Instant;
 import java.time.Duration;
 import java.io.*;
+
 /*
  * Thomas: This is a singleton class representing the entire game state.
  * It has static fields representing the Swing components used for the UI.
@@ -30,12 +31,11 @@ public class Game {
   public static final int WIDTH = 30;
   public static final int HEIGHT = 30;
   public static final int DIALOGUE_HEIGHT = 4;
-  public static final int DIALOGUE_WIDTH = WIDTH-2;
-  
-  
-  
+  public static final int DIALOGUE_WIDTH = WIDTH - 2;
+
   // Speed of player
   public static final double SPEED = 0.015;
+
   // Thomas: This is a class representing a handler for key presses.
   public static class KeyBox {
     /*
@@ -49,7 +49,7 @@ public class Game {
     public ConcurrentHashMap<Integer, Boolean> wasPressed;
     // flags to be set when a key is pressed and reset only when the key is released
     public ConcurrentHashMap<Integer, Boolean> isPressed;
-   
+
     // A subclass of KeyListener that updates the KeyBox state when keys are
     // pressed.
     // Note that it is not static, as it is bound to the KeyBox instance it's a part
@@ -77,7 +77,9 @@ public class Game {
         KeyBox.this.isPressed.put(e.getKeyCode(), false);
       }
     }
+
     public JFrame frame;
+
     public KeyBox() {
       wasPressed = new ConcurrentHashMap<>();
       isPressed = new ConcurrentHashMap<>();
@@ -85,6 +87,7 @@ public class Game {
       frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
       frame.setLayout(new FlowLayout());
     }
+
     // See if key has been pressed within the last update.
     // If it has and is not still being held down, reset the flag to false.
     public boolean getResetKey(int keyCode) {
@@ -98,7 +101,7 @@ public class Game {
       return false;
     }
   }
-  
+
   public static enum EventType {
     IntersectEvent,
     InteractEvent,
@@ -116,8 +119,8 @@ public class Game {
     RIGHT_UP,
     RIGHT_DOWN
   }
-  
-  public static enum SpriteType{
+
+  public static enum SpriteType {
     Dialogue_Point,
     Exit
   }
@@ -134,46 +137,57 @@ public class Game {
   }
 
   public static void goToChamber(Chamber goTo, Point dropAt) {
-    pos = new Point2D.Double(dropAt.getX(),dropAt.getY());
+    pos = new Point2D.Double(dropAt.getX(), dropAt.getY());
     currentChamber = goTo;
   }
-  public static Template initDialoguePoint(){
-    
-    Template.Initializer inti = (uniqueData,handlerMap) -> {
-      Sprite iniSprite = new Sprite((String)uniqueData.remove(0), 'd');
+
+  public static Template initDialoguePoint() {
+
+    Template.Initializer init = (uniqueData, handlerMap) -> {
+      Sprite iniSprite = new Sprite((String) uniqueData.remove(0), 'd');
       iniSprite.handlerMap = handlerMap;
       iniSprite.uniqueData = uniqueData;
       iniSprite.type = SpriteType.Dialogue_Point;
       return iniSprite;
     };
 
-   Template.Handler t = (TouchEvent, dialoguePoint) -> LevelEditor.dialogueIn.put((String)dialoguePoint.uniqueData.get(0)),
-      i = (IntersectEvent, dialoguePoint) -> {},
-      i_a = (InteractEvent, dialoguePoint) -> {},
-      l = (LeaveSquareEvent, dialoguePoint) -> {};
-    
+    Template.Handler t = (TouchEvent, dialoguePoint) -> LevelEditor.dialogueIn
+        .put((String) dialoguePoint.uniqueData.get(0)),
+        i = (IntersectEvent, dialoguePoint) -> {
+        },
+        i_a = (InteractEvent, dialoguePoint) -> {
+        },
+        l = (LeaveSquareEvent, dialoguePoint) -> {
+        };
+
     Template.HandlerMap handlerMap = new Template.HandlerMap();
-    
-    handlerMap.put(Game.EventType.TouchEvent,t);
+
+    handlerMap.put(Game.EventType.TouchEvent, t);
     handlerMap.put(Game.EventType.IntersectEvent, i);
     handlerMap.put(Game.EventType.InteractEvent, i_a);
     handlerMap.put(Game.EventType.LeaveSquareEvent, l);
-    Template dialoguePoint = new Template("dialoguePoint",'d', inti,handlerMap);
+    Template dialoguePoint = new Template("dialoguePoint", 'd', init, handlerMap);
     return dialoguePoint;
   }
-  public static Template initExit(){
+
+  public static Template initExit() {
     Template.Initializer init = (uniqueData, handlerMap) -> {
-      Sprite iniSprite = new Sprite((String)uniqueData.remove(0), 'd');
+      Sprite iniSprite = new Sprite((String) uniqueData.remove(0), 'd');
       iniSprite.handlerMap = handlerMap;
       iniSprite.uniqueData = uniqueData;
       iniSprite.type = SpriteType.Exit;
       return iniSprite;
     };
-    Template.Handler touchHandler = (TouchEvent, exit) -> {},
-      intersectHandler = (IntersectEvent, exit) -> {},
-      interactHandler = (InteractEvent, exit) -> {},
-      leaveHandler = (LeaveSquareEvent, exit) -> {Game.goToChamber(((Chamber)exit.uniqueData.get(0)), 
-      ((Chamber)exit.uniqueData.get(0)).directionDropGetter.get(Game.playerDirection));};
+    Template.Handler touchHandler = (TouchEvent, exit) -> {
+    },
+        intersectHandler = (IntersectEvent, exit) -> {
+        },
+        interactHandler = (InteractEvent, exit) -> {
+        },
+        leaveHandler = (LeaveSquareEvent, exit) -> {
+          Game.goToChamber(((Chamber) exit.uniqueData.get(0)),
+              ((Chamber) exit.uniqueData.get(0)).directionDropGetter.get(Game.playerDirection));
+        };
     Template.HandlerMap handlerMap = new Template.HandlerMap();
     handlerMap.put(EventType.TouchEvent, touchHandler);
     handlerMap.put(EventType.IntersectEvent, intersectHandler);
@@ -182,17 +196,19 @@ public class Game {
     Template exit = new Template("exit", 'e', init, handlerMap);
     return exit;
   }
-  public static HashMap<SpriteType, Template> genBindings(){
+
+  public static HashMap<SpriteType, Template> genBindings() {
     HashMap<SpriteType, Template> spriteTypeBindings = new HashMap<SpriteType, Template>();
-    spriteTypeBindings.put(SpriteType.Dialogue_Point,initDialoguePoint());
+    spriteTypeBindings.put(SpriteType.Dialogue_Point, initDialoguePoint());
     return spriteTypeBindings;
   }
-  //chamber which the player is currently in
+
+  // chamber which the player is currently in
   public static Chamber currentChamber = new Chamber(1);
-  //DialoguePoint template
+  // DialoguePoint template
   public static Template DialoguePoint = initDialoguePoint();
   // Map of spriteType to template
-  public static HashMap<SpriteType, Template> spriteTypeBindings = genBindings(); 
+  public static HashMap<SpriteType, Template> spriteTypeBindings = genBindings();
 
   public static BlockingQueue<String> dialogueIn;
   // Instance of KeyBox to represent the game state
@@ -203,11 +219,12 @@ public class Game {
   public static Point2D.Double pos;
   // Game display state
   private static String displayState;
-  //Direction in which the player is currently going
+  // Direction in which the player is currently going
   public static Direction playerDirection;
+
   // Initialize game state
-  public static void init() throws OperationNotSupportedException, FileNotFoundException, InterruptedException{
-    
+  public static void init() throws OperationNotSupportedException, FileNotFoundException, InterruptedException {
+
     pos = new Point2D.Double(2.0, 2.0);
     dialogueIn = new LinkedBlockingQueue<String>();
     textArea = new JTextArea();
@@ -221,6 +238,7 @@ public class Game {
     box.frame.pack();
     box.frame.setVisible(true);
   }
+
   public static void update(double delta) {
     // Multiply the time delta between now and the last update by the SPEED constant
     // to calculate the offset
@@ -232,21 +250,21 @@ public class Game {
     // display to the right or bottom.
     double farRight = (double) WIDTH - 1.0;
     double farBottom = (double) HEIGHT - 1.0;
-    Point2D.Double prevPos = new Point2D.Double(pos.x,pos.y);
+    Point2D.Double prevPos = new Point2D.Double(pos.x, pos.y);
     boolean goingUp = box.getResetKey(KeyEvent.VK_UP),
         goingDown = box.getResetKey(KeyEvent.VK_DOWN),
         goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
         goingRight = box.getResetKey(KeyEvent.VK_RIGHT);
     if (goingUp && goingLeft && !goingDown && !goingRight) { // Up and down would cancel each other out, as would left
-      playerDirection = Direction.LEFT_UP;                                                       // and right
+      playerDirection = Direction.LEFT_UP; // and right
       pos.x = Math.max(0.0, pos.x - diagInterval);
       pos.y = Math.max(0.0, pos.y - diagInterval);
-      
+
     } else if (goingDown && goingLeft && !goingUp && !goingRight) {
       playerDirection = Direction.LEFT_DOWN;
       pos.x = Math.max(0.0, pos.x - diagInterval);
       pos.y = Math.min(farBottom, pos.y + diagInterval);
-      
+
     } else if (goingUp && goingRight && !goingDown && !goingLeft) {
       playerDirection = Direction.RIGHT_UP;
       pos.x = Math.min(farRight, pos.x + diagInterval);
@@ -255,15 +273,15 @@ public class Game {
       playerDirection = Direction.RIGHT_DOWN;
       pos.x = Math.min(farRight, pos.x + diagInterval);
       pos.y = Math.min(farBottom, pos.y + diagInterval);
-    } else if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal                          
+    } else if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal
                                         // directions.
       playerDirection = Direction.UP;
       pos.y = Math.max(0.0, pos.y - currentSpeed);
-       
+
     } else if (goingDown && !goingUp) {
       playerDirection = Direction.UP;
       pos.y = Math.min(farBottom, pos.y + currentSpeed);
-     
+
     } else if (goingLeft && !goingRight) {
       playerDirection = Direction.LEFT;
       pos.x = Math.max(0.0, pos.x - currentSpeed);
@@ -271,16 +289,17 @@ public class Game {
       playerDirection = Direction.RIGHT;
       pos.x = Math.min(farRight, pos.x + currentSpeed);
     }
-    if ((int)prevPos.x != (int)pos.x || (int)prevPos.y != (int)pos.y){
-         if (currentChamber.matrix[(int)pos.y][(int)pos.x].isWall == true){
-            pos = prevPos;
-         }
+    if ((int) prevPos.x != (int) pos.x || (int) prevPos.y != (int) pos.y) {
+      if (currentChamber.matrix[(int) pos.y][(int) pos.x].isWall == true) {
+        pos = prevPos;
+      }
     }
-   
+
   }
+
   // Method to rewrite displayState after each update.
-  public static void render() throws OperationNotSupportedException, InterruptedException{
-    
+  public static void render() throws OperationNotSupportedException, InterruptedException {
+
     displayState = "";
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
@@ -289,92 +308,93 @@ public class Game {
         ArrayList<Sprite> s = new ArrayList<Sprite>(currentChamber.matrix[j][i].sprites);
         if (i == trunc_y && j == trunc_x) {
           displayState += "@";
-        } 
-        else if(currentChamber.matrix[j][i].isWall){
+        } else if (currentChamber.matrix[j][i].isWall) {
           displayState += "|";
-        }
-        else if (currentChamber.matrix[j][i].sprites.size() == 0){
+        } else if (currentChamber.matrix[j][i].sprites.size() == 0) {
           displayState += " ";
-        }   
-        else{           
-         if (s.get(0) != null){
-            if (s.get(0).visible == true){
-               displayState += currentChamber.matrix[j][i].sprites.get(0).symbol;
+        } else {
+          if (s.get(0) != null) {
+            if (s.get(0).visible == true) {
+              displayState += currentChamber.matrix[j][i].sprites.get(0).symbol;
+            } else {
+              displayState += " ";
             }
-            else{
-               displayState += " ";
-            }
-         }
-         else{
-           displayState += " ";
-         }
-        }   
+          } else {
+            displayState += " ";
+          }
+        }
         displayState += " ";
       }
       displayState += "\n\n";
     }
-    
-   /* if (dialogueIn.size() == 0){
-      renderEmptyDialogueBox();
-    }
-    else{
-      String toSay = "";
-      toSay += (String)dialogueIn.poll(1, TimeUnit.MILLISECONDS);
-      displayState += "+";
-      for (int i = 0; i < DIALOGUE_WIDTH*2+1; i++) { // Horizontal cursor coordinate (x)
-       displayState += "-";
-      }
-      displayState += "+";
-      displayState +="\n";
-      String[][] toInsert = formatString(toSay.split(""));
-      for (int i = 0;i < Math.min(DIALOGUE_HEIGHT,toInsert.length); i++) {
-        displayState += "|";
-        for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
-          displayState += toInsert[i][j];
-        }
-        displayState +="|\n";
-      }
-      //Checks if dialogue has gone off dialogueBox screen
-      if (i == DIALOGUE_HEIGHT && j == DIALOGUE_WIDTH){
-        String toPut = "";
-        for (int i = 0; i < )  
-          for (j = j; j < DIALOGUE_WIDTH; j++){
-              toPut += toInsert
-          }
-      }
-    }*/
+
+    /*
+     * if (dialogueIn.size() == 0){
+     * renderEmptyDialogueBox();
+     * }
+     * else{
+     * String toSay = "";
+     * toSay += (String)dialogueIn.poll(1, TimeUnit.MILLISECONDS);
+     * displayState += "+";
+     * for (int i = 0; i < DIALOGUE_WIDTH*2+1; i++) { // Horizontal cursor
+     * coordinate (x)
+     * displayState += "-";
+     * }
+     * displayState += "+";
+     * displayState +="\n";
+     * String[][] toInsert = formatString(toSay.split(""));
+     * for (int i = 0;i < Math.min(DIALOGUE_HEIGHT,toInsert.length); i++) {
+     * displayState += "|";
+     * for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
+     * displayState += toInsert[i][j];
+     * }
+     * displayState +="|\n";
+     * }
+     * //Checks if dialogue has gone off dialogueBox screen
+     * if (i == DIALOGUE_HEIGHT && j == DIALOGUE_WIDTH){
+     * String toPut = "";
+     * for (int i = 0; i < )
+     * for (j = j; j < DIALOGUE_WIDTH; j++){
+     * toPut += toInsert
+     * }
+     * }
+     * }
+     */
   }
-  /*public static void renderEmptyDialogueBox(){
-    displayState += "+";
-    for (int i = 0; i < DIALOGUE_WIDTH*2+1; i++) { // Horizontal cursor coordinate (x)
-      displayState += "-";
-    }
-    displayState += "+";
-    displayState +="\n";
-    for (int i = 0;i < DIALOGUE_HEIGHT; i++) {
-      displayState += "|";
-      for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
-        displayState += " ";
-      }
-      displayState +="|\n";
-    }
-    displayState += "+";
-    for(int i = 0; i < DIALOGUE_WIDTH*2+1; i++){
-      displayState += "-";
-    }
-    displayState += "+";
-  }
-  public static String[][] formatString(String[] str){
-    String[][] formattedDialogue= new String[DIALOGUE_HEIGHT][DIALOGUE_WIDTH];
-    for (int i = 0; i < Math.min(str.length, (DIALOGUE_HEIGHT-2)*(DIALOGUE_WIDTH*2)); i++){
-      formattedDialogue[i%DIALOGUE_WIDTH][i/DIALOGUE_WIDTH] = str[i];
-    }
-    return formattedDialogue;
-  }*/
-  
-  
+  /*
+   * public static void renderEmptyDialogueBox(){
+   * displayState += "+";
+   * for (int i = 0; i < DIALOGUE_WIDTH*2+1; i++) { // Horizontal cursor
+   * coordinate (x)
+   * displayState += "-";
+   * }
+   * displayState += "+";
+   * displayState +="\n";
+   * for (int i = 0;i < DIALOGUE_HEIGHT; i++) {
+   * displayState += "|";
+   * for (int j = 0; j < DIALOGUE_WIDTH*2+1; j++){
+   * displayState += " ";
+   * }
+   * displayState +="|\n";
+   * }
+   * displayState += "+";
+   * for(int i = 0; i < DIALOGUE_WIDTH*2+1; i++){
+   * displayState += "-";
+   * }
+   * displayState += "+";
+   * }
+   * public static String[][] formatString(String[] str){
+   * String[][] formattedDialogue= new String[DIALOGUE_HEIGHT][DIALOGUE_WIDTH];
+   * for (int i = 0; i < Math.min(str.length,
+   * (DIALOGUE_HEIGHT-2)*(DIALOGUE_WIDTH*2)); i++){
+   * formattedDialogue[i%DIALOGUE_WIDTH][i/DIALOGUE_WIDTH] = str[i];
+   * }
+   * return formattedDialogue;
+   * }
+   */
+
   // Method to call update and render repeatedly until the program exits.
-  public static void run() throws OperationNotSupportedException, InterruptedException{
+  public static void run() throws OperationNotSupportedException, InterruptedException {
     Instant then = Instant.now();
     while (true) {
       Instant now = Instant.now();
@@ -385,7 +405,6 @@ public class Game {
       then = now;
     }
   }
-
 
   public static void main(String args[]) throws Exception { // program entry point
     init();

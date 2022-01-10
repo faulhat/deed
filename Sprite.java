@@ -1,7 +1,6 @@
 import java.util.Map;
-
-import java.nio.channels.FileChannel.MapMode;
 import java.util.ArrayList;
+
 public class Sprite implements DS.Storable {
   public boolean visible;
   

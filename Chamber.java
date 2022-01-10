@@ -1,7 +1,5 @@
 import java.awt.Point;
 import java.util.ArrayList;
-import java.awt.geom.Point2D;
-import java.io.*;
 import java.util.HashMap;
 import java.util.EnumMap;
 /*
@@ -47,24 +45,22 @@ public class Chamber implements DS.Storable {
         }
 
         HashMap<String, DS.Node> map = ((DS.MapNode) node).getMap();
-        DS.KeywordNode isWallKeyNode = new DS.KeywordNode("isWall");
-        if (!map.containsKey(isWallKeyNode)) {
+        if (!map.containsKey(":iswall")) {
           throw new SquareLoadingException("No isWall boolean found.");
         }
 
-        DS.Node isWallValNode = map.get(isWallKeyNode);
+        DS.Node isWallValNode = map.get(":iswall");
         if (!(isWallValNode instanceof DS.IdNode && ((DS.IdNode) isWallValNode).isBool())) {
           throw new SquareLoadingException("isWall parameter is invalid.");
         }
 
         isWall = ((DS.IdNode) isWallValNode).isTrue();
 
-        DS.KeywordNode spritesKeyNode = new DS.KeywordNode("sprites");
-        if (!map.containsKey(spritesKeyNode)) {
+        if (!map.containsKey(":sprites")) {
           throw new SquareLoadingException("No sprite list found.");
         }
 
-        DS.Node spritesValNode = map.get(spritesKeyNode);
+        DS.Node spritesValNode = map.get(":sprites");
         if (!(spritesValNode instanceof DS.VectorNode)) {
           throw new SquareLoadingException("sprites parameter is invalid.");
         }
@@ -159,9 +155,9 @@ public class Chamber implements DS.Storable {
   }
 
   public Chamber(int width) {
-    matrix = new Square[this.height][this.width];
-    for (int i = 0; i < this.height; i++) {
-      for (int j = 0; j < this.width; j++) {
+    matrix = new Square[height][width];
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
         ArrayList<Sprite> s = new ArrayList<Sprite>();
         Square toAdd = new Square(false, s);
         matrix[i][j] = toAdd;

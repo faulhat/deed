@@ -3,7 +3,7 @@ import java.io.FileWriter;
 import java.io.File;
 import java.io.FileReader;
 
-public class SerializationTest{
+public class SerializationTest {
     public static void main(String[] args) throws Exception {
         ArrayList<Object> s = new ArrayList<>();
         s.add("Test");
@@ -11,7 +11,7 @@ public class SerializationTest{
         System.out.println(s);
         Sprite sp = Game.DialoguePoint.genSprite(s);
         DS.MapNode n = sp.dump();
-        File f = new File("TestSerializationOutput.txt");
+        File f = new File("TestSerializationOutput.data.txt");
         FileWriter f_writer = new FileWriter(f);
         n.dump(f_writer);
         f_writer.close();
@@ -29,6 +29,17 @@ public class SerializationTest{
         Sprite deserializedSprite = new Sprite((DS.MapNode) firstSubNode);
         System.out.println(deserializedSprite.name);
         System.out.println(sp.equals(deserializedSprite));
-        
+        System.out.println();
+
+        // Test serialization of Chamber and Square
+        Chamber chamber = new Chamber();
+        chamber.matrix[1][1] = new Chamber.Square(true);
+        boolean didItWork = chamber.testSerialization();
+        if (didItWork) {
+            System.out.println("Chamber serialization and deserialization successful");
+        }
+        else {
+            System.out.println("Serialization or deserialization of Chamber failed.");
+        }
     }
 }

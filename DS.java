@@ -53,7 +53,8 @@ public class DS {
 
     public static class IncompleteExpressionException extends ParserException {
         public IncompleteExpressionException(int lineno, int colno, String token) {
-            super(lineno, colno, "Error! This expression is incomplete. Expression ends prematurely on token: " + token);
+            super(lineno, colno,
+                    "Error! This expression is incomplete. Expression ends prematurely on token: " + token);
         }
     }
 
@@ -109,7 +110,8 @@ public class DS {
     public static class Root extends ComplexNode {
         @Override
         public String walk(int depth) {
-            return Repeat.repeat2(" ", depth) + "ROOT {\n" + walkSubordinates(depth) + Repeat.repeat2(" ", depth) + "}\n";
+            return Repeat.repeat2(" ", depth) + "ROOT {\n" + walkSubordinates(depth) + Repeat.repeat2(" ", depth)
+                    + "}\n";
         }
 
         @Override
@@ -119,12 +121,13 @@ public class DS {
     }
 
     public static class ListNode extends ComplexNode {
-        public ListNode(){
+        public ListNode() {
             super();
         }
+
         @Override
         public String walk(int depth) {
-            return Repeat.repeat2(" " , depth) + "(\n" + walkSubordinates(depth) + Repeat.repeat2(" ", depth) + ")\n";
+            return Repeat.repeat2(" ", depth) + "(\n" + walkSubordinates(depth) + Repeat.repeat2(" ", depth) + ")\n";
         }
 
         @Override
@@ -172,7 +175,7 @@ public class DS {
         }
 
         public HashMap<String, Node> getMap() throws NonDeserializableException {
-            assert(complexVal.size() % 2 == 0); // Make sure there are an even number of nodes in this expression.
+            assert (complexVal.size() % 2 == 0); // Make sure there are an even number of nodes in this expression.
 
             HashMap<String, Node> map = new HashMap<>();
             for (int i = 0; i < complexVal.size(); i += 2) {
@@ -180,14 +183,11 @@ public class DS {
 
                 if (key instanceof StringNode) {
                     map.put(((StringNode) key).value, value);
-                }
-                else if (key instanceof IdNode) {
+                } else if (key instanceof IdNode) {
                     map.put(((IdNode) key).name, value);
-                }
-                else if (key instanceof KeywordNode) {
+                } else if (key instanceof KeywordNode) {
                     map.put(":" + ((KeywordNode) key).key, value);
-                }
-                else {
+                } else {
                     throw new NonDeserializableException();
                 }
             }
@@ -211,34 +211,39 @@ public class DS {
     public static abstract class SimpleNode extends Node {
         public abstract void finalize(String s);
     }
+
     // Node for serialization of unique classes
-    public static class UniqueNode extends SimpleNode{
+    public static class UniqueNode extends SimpleNode {
         public Object data;
-        public UniqueNode(){
+
+        public UniqueNode() {
 
         }
-        public UniqueNode(Object data){
+
+        public UniqueNode(Object data) {
             this.data = data;
         }
+
         @Override
-        public void finalize(String s){
-            this.data = (Object)s;
+        public void finalize(String s) {
+            this.data = (Object) s;
         }
-        public String walk(int depth){
+
+        public String walk(int depth) {
             return Repeat.repeat2(" ", depth) + data + '\n';
         }
-        public void dump(Writer writer) throws IOException{
+
+        public void dump(Writer writer) throws IOException {
             System.out.println(data);
-            if (!(data instanceof String)){
+            if (!(data instanceof String)) {
                 writer.append(' ' + data.toString());
+            } else {
+                writer.append(' ' + (String) data);
             }
-            else{
-                writer.append(' ' + (String)data);
-            }
-        }   
-        
-        
+        }
+
     }
+
     public static class IdNode extends SimpleNode {
         public String name;
 
@@ -268,7 +273,7 @@ public class DS {
         public boolean isNil() {
             return name.equals("nil");
         }
-        
+
         public boolean isBool() {
             return name.equals("true") || name.equals("false");
         }
@@ -282,7 +287,7 @@ public class DS {
         public String key;
 
         public KeywordNode() {
-            
+
         }
 
         public KeywordNode(String key) {
@@ -296,12 +301,12 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return Repeat.repeat2(" ", depth) + key + '\n';
+            return Repeat.repeat2(" ", depth) + ":" + key + '\n';
         }
 
         @Override
         public void dump(Writer writer) throws IOException {
-            writer.append(key + " ");
+            writer.append(":" + key + " ");
         }
     }
 
@@ -320,28 +325,27 @@ public class DS {
             if (value.length() > 10) { // We will truncate the string if it is longer than ten characters.
                 for (int i = 0; i < 7; i++) {
                     switch (value.charAt(i)) {
-                    case '\n':
-                    case '\r':
-                    case '\t':
-                        // All of these will be replaced with slashes
-                        out += '/';
-                    default:
-                        out += value.charAt(i);
+                        case '\n':
+                        case '\r':
+                        case '\t':
+                            // All of these will be replaced with slashes
+                            out += '/';
+                        default:
+                            out += value.charAt(i);
                     }
                 }
 
                 out += "...";
-            }
-            else {
+            } else {
                 for (int i = 0; i < value.length(); i++) {
                     switch (value.charAt(i)) {
-                    case '\n':
-                    case '\r':
-                    case '\t':
-                        // All of these will be replaced with slashes
-                        out += '/';
-                    default:
-                        out += value.charAt(i);
+                        case '\n':
+                        case '\r':
+                        case '\t':
+                            // All of these will be replaced with slashes
+                            out += '/';
+                        default:
+                            out += value.charAt(i);
                     }
                 }
             }
@@ -384,7 +388,7 @@ public class DS {
 
         @Override
         public String walk(int depth) {
-            return Repeat.repeat2(" ",depth) + value + "\n";
+            return Repeat.repeat2(" ", depth) + value + "\n";
         }
 
         @Override
@@ -401,7 +405,8 @@ public class DS {
         // Read from reader until we reach the end of the input
         boolean inComment = false;
 
-        // String for holding on to the characters read since we switched into the current state
+        // String for holding on to the characters read since we switched into the
+        // current state
         String temp = null;
 
         // Last character read;
@@ -410,9 +415,12 @@ public class DS {
         // Line and column number
         int lineno = 1, colno = 1;
 
-        /* Start iterating through the input.
-         * If we reach a character that prompts us to move into a different parsing mode, we push the current mode onto the "mode stack," and then switch.
-         * This allows us to return to that state once we reach a termination character for the current state.
+        /*
+         * Start iterating through the input.
+         * If we reach a character that prompts us to move into a different parsing
+         * mode, we push the current mode onto the "mode stack," and then switch.
+         * This allows us to return to that state once we reach a termination character
+         * for the current state.
          */
         for (int next = reader.read(); next != -1; next = reader.read()) {
             char c = (char) next;
@@ -420,12 +428,11 @@ public class DS {
             if (inComment) {
                 if (c == '\n') {
                     inComment = false;
-                }
-                else {
+                } else {
                     continue;
                 }
             }
-            
+
             if (c == ';') {
                 inComment = true;
                 continue;
@@ -438,27 +445,20 @@ public class DS {
                     // Deal with escape sequences
                     if (c == '\\') {
                         temp += '\\';
-                    }
-                    else if (c == '"') {
+                    } else if (c == '"') {
                         temp += '\"';
-                    }
-                    else if (c == 'n') {
+                    } else if (c == 'n') {
                         temp += '\n';
-                    }
-                    else if (c == 't') {
+                    } else if (c == 't') {
                         temp += '\t';
-                    }
-                    else if (c == 'r') {
+                    } else if (c == 'r') {
                         temp += '\r';
-                    }
-                    else {
+                    } else {
                         throw new UnrecognizedEscapeSequenceException(lineno, colno, "\\" + c);
                     }
-                }
-                else if (c == '"') { // If this character is an unescaped quote...
+                } else if (c == '"') { // If this character is an unescaped quote...
                     doPop = true; // ...the string is complete.
-                }
-                else if (c != '\\') { // Do not consume backslashes unless escaped
+                } else if (c != '\\') { // Do not consume backslashes unless escaped
                     temp += c;
                 }
             }
@@ -466,111 +466,96 @@ public class DS {
                 // Deal with whitespace
                 if (frame instanceof StringNode) { // Consume whitespace if this is a string.
                     temp += c;
-                }
-                else if (frame instanceof SimpleNode) {
+                } else if (frame instanceof SimpleNode) {
                     ((SimpleNode) frame).finalize(temp);
                     doPop = true;
                 }
-            }
-            else if (c == '"') {
+            } else if (c == '"') {
                 if (frame instanceof SimpleNode) { // We already dealt with quotes in strings.
                     ((SimpleNode) frame).finalize(temp); // Finish parsing this token.
-                    
+
                     // Store this node
                     Node prev = stack.peek();
-                    assert(prev instanceof ComplexNode);
+                    assert (prev instanceof ComplexNode);
                     ((ComplexNode) prev).complexVal.add(frame);
 
                     frame = new StringNode(); // Start parsing the new string.
-                }
-                else {
+                } else {
                     stack.push(frame);
                     frame = new StringNode();
                 }
-            }
-            else if (frame instanceof ListNode && c == ')' || frame instanceof VectorNode && c == ']' || frame instanceof MapNode && c == '}') {
+            } else if (frame instanceof ListNode && c == ')' || frame instanceof VectorNode && c == ']'
+                    || frame instanceof MapNode && c == '}') {
                 // If this is the end of a compound expresion...
                 doPop = true;
-            }
-            else if (c == '(' || c == '[' || c == '{') { // If this is the beginning of a complex expression...
-                if (frame instanceof SimpleNode) { // Whitespace is not required between simple and complex expressions, only simple expressions and other simple expressions.
+            } else if (c == '(' || c == '[' || c == '{') { // If this is the beginning of a complex expression...
+                if (frame instanceof SimpleNode) { // Whitespace is not required between simple and complex expressions,
+                                                   // only simple expressions and other simple expressions.
                     ((SimpleNode) frame).finalize(temp);
-                    
+
                     Node prev = stack.peek();
-                    assert(prev instanceof ComplexNode);
+                    assert (prev instanceof ComplexNode);
                     ((ComplexNode) prev).complexVal.add(frame);
-                }
-                else {
+                } else {
                     stack.push(frame);
                 }
-                
+
                 if (c == '(') {
                     frame = new ListNode();
-                }
-                else if (c == '[') {
+                } else if (c == '[') {
                     frame = new VectorNode();
-                }
-                else if (c == '{') {
+                } else if (c == '{') {
                     frame = new MapNode();
                 }
-            }
-            else if (frame instanceof ComplexNode) {
-                stack.push(frame); // Since we've already dealt with whitespace and closed-brackets, we know we will be encountering a new token.
+            } else if (frame instanceof ComplexNode) {
+                stack.push(frame); // Since we've already dealt with whitespace and closed-brackets, we know we
+                                   // will be encountering a new token.
 
                 if (c >= '0' && c <= '9') {
                     frame = new IntNode();
                     temp = "" + c;
-                }
-                else if (c == '.') {
+                } else if (c == '.') {
                     frame = new FloatNode();
                     temp = "" + c;
-                }
-                else if (c == ':') { // Keywords in Lisp are identifiers which start with colons.
+                } else if (c == ':') { // Keywords in Lisp are identifiers which start with colons.
                     frame = new KeywordNode();
                     temp = "";
-                }
-                else {
+                } else {
                     frame = new IdNode();
                     temp = "" + c;
                 }
-            }
-            else if (frame instanceof IntNode) {
+            } else if (frame instanceof IntNode) {
                 temp += c;
 
                 if (c == '.') {
                     frame = new FloatNode();
-                }
-                else if (!(c >= '0' && c <= '9')) { // c is not a numeral
+                } else if (!(c >= '0' && c <= '9')) { // c is not a numeral
                     throw new TokenParsingException(lineno, colno, temp);
                 }
-            }
-            else if (frame instanceof FloatNode) {
+            } else if (frame instanceof FloatNode) {
                 temp += c;
 
                 if (!(c >= '0' && c <= '9')) {
                     throw new TokenParsingException(lineno, colno, temp);
                 }
-            }
-            else if (frame instanceof IdNode) {
+            } else if (frame instanceof IdNode) {
                 if (last_c == '-') {
                     if (c >= '0' && c <= '9') {
                         frame = new IntNode();
-                    }
-                    else if (c == '.') {
+                    } else if (c == '.') {
                         frame = new FloatNode();
                     }
                 }
 
                 temp += c;
-            }
-            else if (frame instanceof KeywordNode) { // Only remaining case
+            } else if (frame instanceof KeywordNode) { // Only remaining case
                 temp += c;
             }
-            
+
             // Store this node if the signal to do so has been given.
             if (doPop) {
                 Node prev = stack.pop();
-                assert(prev instanceof ComplexNode);
+                assert (prev instanceof ComplexNode);
                 ((ComplexNode) prev).complexVal.add(frame);
 
                 frame = prev;
@@ -579,8 +564,7 @@ public class DS {
             if (c == '\n') {
                 lineno++;
                 colno = 1;
-            }
-            else {
+            } else {
                 colno++;
             }
         }
@@ -590,7 +574,7 @@ public class DS {
             ((SimpleNode) frame).finalize(temp);
 
             Node prev = stack.pop();
-            assert(prev instanceof ComplexNode);
+            assert (prev instanceof ComplexNode);
             ((ComplexNode) prev).complexVal.add(frame);
 
             frame = prev;
@@ -601,7 +585,7 @@ public class DS {
             throw new StillParsingException(lineno, colno);
         }
 
-        assert(frame instanceof Root);
+        assert (frame instanceof Root);
         return (Root) frame;
     }
 
@@ -609,8 +593,7 @@ public class DS {
     public static Root loads(String str) throws Exception {
         try (StringReader reader = new StringReader(str)) {
             return load(reader);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw e;
         }
     }

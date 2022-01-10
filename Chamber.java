@@ -1,7 +1,12 @@
 import java.awt.Point;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 import java.util.EnumMap;
+
 /*
  * Thomas: This class represents an overworld chamber
  * It has a matrix of booleans. true elements represent walls
@@ -21,9 +26,13 @@ public class Chamber implements DS.Storable {
       }
     }
 
-    public Square() {
-      this.isWall = false;
+    public Square(boolean isWall) {
+      this.isWall = isWall;
       this.sprites = new ArrayList<>();
+    }
+
+    public Square() {
+      this(false);
     }
 
     public Square(DS.Node node) throws LoadingException {
@@ -36,10 +45,11 @@ public class Chamber implements DS.Storable {
       this.sprites = new ArrayList<>();
       this.sprites.addAll(sprites);
     }
-    //Method to deserialize from node
+
+    // Method to deserialize from node
     @Override
     public void load(DS.Node node) throws LoadingException {
-      try{  
+      try {
         if (!(node instanceof DS.MapNode)) {
           throw new SquareLoadingException("Can only take a map node.");
         }
@@ -68,16 +78,17 @@ public class Chamber implements DS.Storable {
         for (DS.Node spriteNode : ((DS.VectorNode) spritesValNode).complexVal) {
           sprites.add(new Sprite(spriteNode));
         }
-      }catch(DS.MapNode.NonDeserializableException e){
+      } catch (DS.MapNode.NonDeserializableException e) {
         System.out.println("Error: Nondeserializable");
       }
     }
-    //Method to serialize a chamber
+
+    // Method to serialize a chamber
     @Override
     public DS.MapNode dump() {
       DS.MapNode map = new DS.MapNode();
 
-      map.complexVal.add(new DS.KeywordNode("isWall"));
+      map.complexVal.add(new DS.KeywordNode("iswall"));
       if (isWall) {
         map.complexVal.add(new DS.IdNode("true"));
       } else {
@@ -93,19 +104,44 @@ public class Chamber implements DS.Storable {
       map.complexVal.add(spritesNode);
       return map;
     }
+
+    @Override
+    public boolean equals(Object otherObj) {
+      if (!(otherObj instanceof Square)) {
+        return false;
+      }
+
+      Square other = (Square) otherObj;
+      if (other.isWall != isWall) {
+        return false;
+      }
+
+      if (!(other.sprites.size() == sprites.size())) {
+        return false;
+      }
+
+      for (int i = 0; i < sprites.size(); i++) {
+        if (!other.sprites.get(i).equals(sprites.get(i))) {
+          return false;
+        }
+      }
+
+      return true;
+    }
   }
-  
+
   public static final int width = 40;
 
   public static final int height = 30;
 
   public Square[][] matrix;
-  
+
   public Point fromUpDrop,
-                        fromDownDrop,
-                        fromLeftDrop,
-                        fromRightDrop;
+      fromDownDrop,
+      fromLeftDrop,
+      fromRightDrop;
   public EnumMap<Game.Direction, Point> directionDropGetter;
+
   public static class ChamberLoadingException extends LoadingException {
     public ChamberLoadingException(String complaint) {
       super("Chamber", complaint);
@@ -115,16 +151,18 @@ public class Chamber implements DS.Storable {
   public Chamber() {
     this.matrix = new Square[width][height];
     this.directionDropGetter = new EnumMap<>(Game.Direction.class);
-    /*Default drop positions are at halfway up the chamber at left/right edge for left/right entry
-      respectively,
-      and halfway acroos at top/bottom for top and bottom
-    */
-    int y_horizontal = width/2;
-    int x_horizontal = height/2;
-    fromUpDrop = new Point(0, x_horizontal); 
-    fromDownDrop = new Point(height-1, x_horizontal);
+    /*
+     * Default drop positions are at halfway up the chamber at left/right edge for
+     * left/right entry
+     * respectively,
+     * and halfway acroos at top/bottom for top and bottom
+     */
+    int y_horizontal = width / 2;
+    int x_horizontal = height / 2;
+    fromUpDrop = new Point(0, x_horizontal);
+    fromDownDrop = new Point(height - 1, x_horizontal);
     fromLeftDrop = new Point(y_horizontal, 0);
-    fromRightDrop = new Point(y_horizontal, width-1);
+    fromRightDrop = new Point(y_horizontal, width - 1);
     directionDropGetter.put(Game.Direction.UP, fromUpDrop);
     directionDropGetter.put(Game.Direction.DOWN, fromDownDrop);
     directionDropGetter.put(Game.Direction.LEFT, fromLeftDrop);
@@ -132,6 +170,8 @@ public class Chamber implements DS.Storable {
   }
 
   public Chamber(DS.Node node) throws LoadingException {
+    this();
+    
     load(node);
   }
 
@@ -177,7 +217,7 @@ public class Chamber implements DS.Storable {
     }
   }
 
-  // toString for testing only 
+  // toString for testing only
   public String toString() {
     String toReturn = "";
     for (int i = 0; i < height; i++) {
@@ -195,8 +235,6 @@ public class Chamber implements DS.Storable {
 
   @Override
   public void load(DS.Node node) throws LoadingException {
-    matrix = new Square[width][height];
-
     if (!(node instanceof DS.VectorNode)) {
       throw new ChamberLoadingException("Node passed is invalid.");
     }
@@ -205,7 +243,7 @@ public class Chamber implements DS.Storable {
     if (vectorNode.complexVal.size() != width) {
       throw new ChamberLoadingException("Vector passed must be of a length equal to the Chamber class constant width.");
     }
-    
+
     for (int i = 0; i < width; i++) {
       DS.Node colNode = vectorNode.complexVal.get(i);
       if (!(colNode instanceof DS.VectorNode)) {
@@ -218,8 +256,10 @@ public class Chamber implements DS.Storable {
         if (squareNode instanceof DS.IdNode && ((DS.IdNode) squareNode).isNil()) {
           matrix[i][j] = null;
         }
-
-        matrix[i][j] = new Square(colVector.complexVal.get(j));
+        else {
+          matrix[i][j] = new Square(colVector.complexVal.get(j));
+      
+        }
       }
     }
   }
@@ -234,13 +274,72 @@ public class Chamber implements DS.Storable {
         if (matrix[i][j] == null) {
           subnode.complexVal.add(new DS.IdNode("nil"));
         }
-
-        subnode.complexVal.add(matrix[i][j].dump());
+        else {
+          subnode.complexVal.add(matrix[i][j].dump());
+        }
       }
 
       node.complexVal.add(subnode);
     }
 
     return node;
+  }
+
+  @Override
+  public boolean equals(Object otherObj) {
+    if (!(otherObj instanceof Chamber)) {
+      return false;
+    }
+
+    Chamber other = (Chamber) otherObj;
+
+    for (int i = 0; i < width; i++) {
+      for (int j = 0; j < height; j++) {
+        if (other.matrix[i][j] == null) {
+          if (matrix[i][j] == null) {
+            continue;
+          }
+
+          return false;
+        }
+
+        if (!other.matrix[i][j].equals(matrix[i][j])) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  public boolean testSerialization() throws Exception {
+    File out = new File("SerializedChamber.data.txt");
+    try (FileWriter writer = new FileWriter(out)) {
+      dump().dump(writer);
+    }
+
+    try (FileReader reader = new FileReader(out)) {
+      DS.Root retrievedNode = DS.load(reader);
+      retrievedNode.print();
+
+      if (retrievedNode.complexVal.size() != 1) {
+        System.out.println("Serialization of Chamber failed (1).");
+        return false;
+      }
+      
+      DS.Node firstNode = retrievedNode.complexVal.get(0);
+      if (!(firstNode instanceof DS.VectorNode)) {
+        System.out.println("Serialization of Chamber failed (2).");
+        return false;
+      }
+
+      Chamber retrievedChamber = new Chamber((DS.VectorNode) firstNode);
+      if (!equals(retrievedChamber)) {
+        System.out.println("Deserialized Chamber did not equal original.");
+        return false;
+      }
+    }
+
+    return true;
   }
 }

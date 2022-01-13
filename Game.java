@@ -172,7 +172,7 @@ public class Game {
 
   public static Template initExit() {
     Template.Initializer init = (uniqueData, handlerMap) -> {
-      Sprite iniSprite = new Sprite((String) uniqueData.remove(0), 'd');
+      Sprite iniSprite = new Sprite((String) uniqueData.remove(0), 'e');
       iniSprite.handlerMap = handlerMap;
       iniSprite.uniqueData = uniqueData;
       iniSprite.type = SpriteType.Exit;
@@ -180,14 +180,10 @@ public class Game {
     };
     Template.Handler touchHandler = (TouchEvent, exit) -> {
     },
-        intersectHandler = (IntersectEvent, exit) -> {
-        },
-        interactHandler = (InteractEvent, exit) -> {
-        },
-        leaveHandler = (LeaveSquareEvent, exit) -> {
-          Game.goToChamber(((Chamber) exit.uniqueData.get(0)),
-              ((Chamber) exit.uniqueData.get(0)).directionDropGetter.get(Game.playerDirection));
-        };
+        intersectHandler = (IntersectEvent, exit) -> {LevelEditor.goToChamber(((Chamber)exit.uniqueData.get(0)), IntersectEvent.direction);},
+        interactHandler = (InteractEvent, exit) -> {},
+        leaveHandler = (LeaveSquareEvent, exit) -> {LevelEditor.goToChamber(((Chamber)exit.uniqueData.get(0)), LeaveSquareEvent.direction);};
+        
     Template.HandlerMap handlerMap = new Template.HandlerMap();
     handlerMap.put(EventType.TouchEvent, touchHandler);
     handlerMap.put(EventType.IntersectEvent, intersectHandler);
@@ -304,7 +300,6 @@ public class Game {
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
       for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
-        System.out.println(i + " " + j);
         ArrayList<Sprite> s = new ArrayList<Sprite>(currentChamber.matrix[j][i].sprites);
         if (i == trunc_y && j == trunc_x) {
           displayState += "@";

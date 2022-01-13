@@ -33,7 +33,7 @@ public class SerializationTest {
 
         // Test serialization of Chamber and Square
         Chamber chamber = new Chamber();
-        chamber.matrix[1][1] = new Chamber.Square(true);
+        chamber.matrix[1][0] = new Chamber.Square(true);
         boolean didItWork = chamber.testSerialization();
         if (didItWork) {
             System.out.println("Chamber serialization and deserialization successful");
@@ -41,5 +41,15 @@ public class SerializationTest {
         else {
             System.out.println("Serialization or deserialization of Chamber failed.");
         }
+        File tripleTest = new File("tripleTest.txt");
+        FileWriter writer2 = new FileWriter(tripleTest);
+        DS.VectorNode v_node = chamber.dump();
+        v_node.dump(writer2);
+        writer2.close();
+        FileReader reader2 = new FileReader(tripleTest);
+        DS.Root root2 = DS.load(reader2);
+        Chamber example = new Chamber(root2.complexVal.get(0));
+        System.out.println(example.equals(chamber));
+        
     }
 }

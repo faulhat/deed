@@ -39,8 +39,6 @@ public class Sprite implements DS.Storable {
 
     if (handler != null) {
       handler.accept(e, this);
-    } else {
-      System.out.println("Handler is null");
     }
   }
 

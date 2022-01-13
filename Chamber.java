@@ -4,7 +4,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-
+import java.awt.geom.Point2D;
 import java.util.EnumMap;
 
 /*
@@ -45,7 +45,11 @@ public class Chamber implements DS.Storable {
       this.sprites = new ArrayList<>();
       this.sprites.addAll(sprites);
     }
-
+    public void eventOn(Game.Event eventToPut) throws InterruptedException{
+      for (Sprite sp : sprites){
+         sp.onEvent(eventToPut);
+      }
+    }
     // Method to deserialize from node
     @Override
     public void load(DS.Node node) throws LoadingException {
@@ -132,7 +136,7 @@ public class Chamber implements DS.Storable {
 
   public static final int width = 40;
 
-  public static final int height = 30;
+  public static final int height = 25;
 
   public Square[][] matrix;
 
@@ -149,7 +153,7 @@ public class Chamber implements DS.Storable {
   }
 
   public Chamber() {
-    this.matrix = new Square[width][height];
+    this.matrix = new Square[this.height][this.width];
     this.directionDropGetter = new EnumMap<>(Game.Direction.class);
     /*
      * Default drop positions are at halfway up the chamber at left/right edge for
@@ -159,14 +163,23 @@ public class Chamber implements DS.Storable {
      */
     int y_horizontal = width / 2;
     int x_horizontal = height / 2;
-    fromUpDrop = new Point(0, x_horizontal);
-    fromDownDrop = new Point(height - 1, x_horizontal);
-    fromLeftDrop = new Point(y_horizontal, 0);
-    fromRightDrop = new Point(y_horizontal, width - 1);
+    fromUpDrop = new Point(x_horizontal, 0);
+    fromDownDrop = new Point(x_horizontal, height-1);
+    fromLeftDrop = new Point(0, y_horizontal);
+    fromRightDrop = new Point(width-1, y_horizontal);
+    System.out.println(fromUpDrop + " " + fromDownDrop + " " + fromLeftDrop + " " + fromRightDrop);
     directionDropGetter.put(Game.Direction.UP, fromUpDrop);
     directionDropGetter.put(Game.Direction.DOWN, fromDownDrop);
     directionDropGetter.put(Game.Direction.LEFT, fromLeftDrop);
     directionDropGetter.put(Game.Direction.RIGHT, fromRightDrop);
+    for (int i = 0; i < this.width; i++) {
+      for (int j = 0; j < this.height; j++) {
+        ArrayList<Sprite> s = new ArrayList<Sprite>();
+        Square toAdd = new Square(false, s);
+        matrix[j][i] = toAdd;
+      }
+    }
+
   }
 
   public Chamber(DS.Node node) throws LoadingException {
@@ -195,9 +208,9 @@ public class Chamber implements DS.Storable {
   }
 
   public Chamber(int width) {
-    matrix = new Square[height][width];
-    for (int i = 0; i < height; i++) {
-      for (int j = 0; j < width; j++) {
+    matrix = new Square[this.height][this.width];
+    for (int i = 0; i < this.height; i++) {
+      for (int j = 0; j < this.width; j++) {
         ArrayList<Sprite> s = new ArrayList<Sprite>();
         Square toAdd = new Square(false, s);
         matrix[i][j] = toAdd;
@@ -217,28 +230,11 @@ public class Chamber implements DS.Storable {
     }
   }
 
-  // toString for testing only
-  public String toString() {
-    String toReturn = "";
-    for (int i = 0; i < height; i++) {
-      for (int j = 0; j < width; j++) {
-        if (matrix[i][j].isWall) {
-          toReturn += "|";
-        } else {
-          toReturn += " ";
-        }
-      }
-      toReturn += "\n";
-    }
-    return toReturn;
-  }
-
   @Override
   public void load(DS.Node node) throws LoadingException {
     if (!(node instanceof DS.VectorNode)) {
       throw new ChamberLoadingException("Node passed is invalid.");
     }
-
     DS.VectorNode vectorNode = (DS.VectorNode) node;
     if (vectorNode.complexVal.size() != width) {
       throw new ChamberLoadingException("Vector passed must be of a length equal to the Chamber class constant width.");
@@ -341,5 +337,9 @@ public class Chamber implements DS.Storable {
     }
 
     return true;
+  }
+  public void eventAtPos(Point2D.Double pos, Game.Event e) throws InterruptedException{
+   Square toActOn = matrix[(int)pos.y][(int)pos.x];
+   toActOn.eventOn(e);
   }
 }

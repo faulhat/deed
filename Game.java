@@ -36,6 +36,9 @@ public class Game {
   // Speed of player
   public static final double SPEED = 0.015;
 
+  //boolean representing whether events should be generated
+  public static boolean eventsOn;
+
   // Thomas: This is a class representing a handler for key presses.
   public static class KeyBox {
     /*
@@ -98,6 +101,16 @@ public class Game {
         }
         return true;
       }
+      return false;
+    }
+
+    // Reset the flag even if it's being held down still.
+    public boolean getReleaseKey(int keyCode) {
+      if (wasPressed.containsKey(keyCode) && wasPressed.get(keyCode)) {
+        wasPressed.put(keyCode, false);
+        return true;
+      }
+
       return false;
     }
   }
@@ -220,6 +233,7 @@ public class Game {
 
   // Initialize game state
   public static void init() throws OperationNotSupportedException, FileNotFoundException, InterruptedException {
+    eventsOn = true;
 
     pos = new Point2D.Double(2.0, 2.0);
     dialogueIn = new LinkedBlockingQueue<String>();

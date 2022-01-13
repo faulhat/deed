@@ -6,7 +6,9 @@ import javax.swing.JTextArea;
 import javax.swing.JMenuBar;
 import javax.naming.OperationNotSupportedException;
 import java.util.concurrent.*;
-import java.lang.InterruptedException;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.ArrayList;
 import java.time.Instant;
 import java.util.Arrays;
@@ -14,6 +16,12 @@ import java.time.Duration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FileReader;
+import java.io.*;
+import java.util.*;
+import java.awt.*;
+import java.lang.*;
+import java.beans.*;
+import java.applet.*;
 
 public class LevelEditor {
 
@@ -36,19 +44,27 @@ public class LevelEditor {
 
   // Singleton class representing the state of the insertion menu
   public static class MenuState {
+    public interface Interactable{
+    }
+    public static interface Editable<T , T2> extends Interactable, BiConsumer{
+      
+    }
+    public static abstract class Insertable implements Interactable{
+      public abstract void insert();
+    }
     // Class representing an item on the menu, which can have sub-items.
     public static class MenuItem {
       // Does this menu item have sub-items?
       public final boolean isLeaf;
 
       public final String name;
-
+      
       public ArrayList<MenuItem> subItems;
 
       public boolean expanded;
 
       // Contents represented by this item.
-      public Sprite contents;
+      public Interactable contents;
 
       public MenuItem(String name) {
         this.isLeaf = false;
@@ -58,19 +74,26 @@ public class LevelEditor {
         this.expanded = false;
       }
 
-      public MenuItem(String name, Sprite contents) {
+      public MenuItem(String name, Interactable contents) {
         this.isLeaf = true;
         this.name = name;
         this.subItems = null;
         this.contents = contents;
         this.expanded = false;
       }
-
+      public void expand(){
+        this.expanded = true;
+      }
+      public void close(){
+        this.expanded = false;
+      }
       // Constant will be passed in to the fourth parameter:
       // n_lines will always be 8
       public String show(int[] lineno, int cursor, int depth) {
         String text = "";
-
+        if (isLeaf){
+          return Repeat.repeat(" ", depth) + name;
+        }
         if (lineno[0] == cursor) {
           text += "- >";
         } else {
@@ -87,18 +110,15 @@ public class LevelEditor {
           text += "  ";
         }
 
-        for (int i = 0; i < depth; i++) {
-          text += ' ';
-        }
         text += name + '\n';
         lineno[0]++;
 
         if (!isLeaf && expanded) {
           for (MenuItem item : items) {
+            
             text += item.show(lineno, cursor, depth + 1);
           }
         }
-
         return text;
       }
 
@@ -152,7 +172,8 @@ public class LevelEditor {
 
       int last_line = Math.min(cursor + N_LINES, lines.length);
 
-      return String.join("\n", Arrays.asList(Arrays.copyOfRange(lines, Math.max(last_line - N_LINES, 0), last_line)));
+      return String.join("\n", Arrays.asList(Arrays.copyOfRange(lines, Math.max(last_line - N_LINES, 0), last_line))) + '\n';
+
     }
   }
 
@@ -162,6 +183,7 @@ public class LevelEditor {
   public static Game.Direction direction;
   // boolean representing whether the player is in the menu or not
   public static boolean isInMenu;
+
   // String representing level editor state
   private static String displayState;
   // Dialogue Queue
@@ -179,6 +201,8 @@ public class LevelEditor {
   }
   // Initialize game state
   public static void init() throws OperationNotSupportedException, InterruptedException {
+    Game.eventsOn = false;
+    
     ArrayList<MenuState.MenuItem> ex = new ArrayList<>();
     box = new Game.KeyBox();
     dialogueIn = new LinkedBlockingQueue<String>();
@@ -190,16 +214,36 @@ public class LevelEditor {
     ArrayList<Object> exitExample = new ArrayList<>();
     exitExample.add("Exit");
     exitExample.add(c);
-    System.out.println(exitExample);
-    System.out.println(c);
 
     Template dialoguePoint = Game.initDialoguePoint();
     Template exit = Game.initExit();
-    Sprite toInsert = dialoguePoint.genSprite(m);
+    Sprite dialoguePointSprite = dialoguePoint.genSprite(m);
     Sprite exitSprite = exit.genSprite(exitExample);
-    System.out.println(exitSprite.uniqueData);
-    ex.add(new MenuState.MenuItem("DialoguePoint", toInsert));
-    ex.add(new MenuState.MenuItem("Exit", exitSprite));
+    MenuState.Editable<Sprite, String> editText = (sprite , dialogueSequence) -> {
+      ((Sprite)sprite).uniqueData.set(0, dialogueSequence);
+    };
+    MenuState.Editable<Sprite, Chamber> editDestination = (toModify, destination) -> {
+      ((Sprite)toModify).uniqueData.set(0, destination);
+    };
+    
+
+    MenuState.MenuItem dialoguePointMenu = new MenuState.MenuItem("DialoguePoint"),
+                      dialoguePointInsert = new MenuState.MenuItem("Insert", dialoguePointSprite),
+    editDialogue = new MenuState.MenuItem("Edit text", editText);
+    dialoguePointMenu.subItems.add(editDialogue);
+    dialoguePointMenu.subItems.add(dialoguePointInsert);
+
+    MenuState.MenuItem exitMenu = new MenuState.MenuItem("Exit"),
+    exitSpriteInit = new MenuState.MenuItem("Insert"),
+    editExitChamber = new MenuState.MenuItem("Edit goto chamber", editDestination);
+    exitMenu.subItems.add(exitSpriteInit);
+    exitMenu.subItems.add(editExitChamber);
+    
+    MenuState.MenuItem itemPickup = new MenuState.MenuItem("Add an item pickup to this location");
+    MenuState.MenuItem itemTypeSelect = new MenuState.MenuItem("Select the item");
+    ex.add(exitMenu);
+    ex.add(dialoguePointMenu);
+    
 
     MenuState.init(ex);
     pos = new Point2D.Double(2.0, 2.0);
@@ -222,7 +266,7 @@ public class LevelEditor {
     box.frame.setVisible(true);
   }
 
-  public static void update(double delta) throws InterruptedException {
+  public static void update(double delta) throws Exception {
     // Multiply the time delta between now and the last update by the SPEED constant
     // to calculate the offset
     // we should move the player by on this update (if he moves).
@@ -245,14 +289,19 @@ public class LevelEditor {
         select = box.getResetKey(KeyEvent.VK_S),
         delete = box.getResetKey(KeyEvent.VK_BACK_SPACE),
         reset = box.getResetKey(KeyEvent.VK_R),
-        checkPos = box.getResetKey(KeyEvent.VK_P);
-    for (int i = (int) Math.max(pos.y - 1, 0.0); i <= (int) Math.min(farRight, pos.y + 1.0); i++) {
-      for (int j = (int) Math.max(pos.x - 1.0, 0.0); j <= (int) Math.min(farBottom, pos.x + 1.0); j++) {
-        Chamber.Square s = c.matrix[i][j];
-        s.eventOn(new Game.Event(Game.EventType.TouchEvent, Game.Direction.UP));
+        checkPos = box.getResetKey(KeyEvent.VK_P),
+        eventsSwitch = box.getReleaseKey(KeyEvent.VK_W),
+        openMenu = box.getReleaseKey(KeyEvent.VK_O);
+    if (Game.eventsOn) {  
+      for (int i = (int) Math.max(pos.y - 1, 0.0); i <= (int) Math.min(farBottom, pos.y + 1.0); i++) {
+        for (int j = (int) Math.max(pos.x - 1.0, 0.0); j <= (int) Math.min(farRight, pos.x + 1.0); j++) {
+          Chamber.Square s = c.matrix[i][j];
+          s.eventOn(new Game.Event(Game.EventType.TouchEvent, direction));
+        }
       }
+      c.eventAtPos(pos, new Game.Event(Game.EventType.IntersectEvent, direction));
     }
-    c.eventAtPos(pos, new Game.Event(Game.EventType.IntersectEvent, direction));
+    
  
     if (openInsertMenu) {
       isInMenu = true;
@@ -265,14 +314,18 @@ public class LevelEditor {
       } else if (goingDown && !goingUp) {
         MenuState.moveCursor(1);
       } else if (select) {
-        c.matrix[(int) pos.y][(int) pos.x].sprites.add(MenuState.items.get(MenuState.cursor).contents);
-        isInMenu = false;
+        if (!MenuState.items.get(MenuState.cursor).isLeaf){;
+          MenuState.items.get(MenuState.cursor).expanded = true;
+          //c.matrix[(int) pos.y][(int) pos.x].sprites.add((Sprite)MenuState.items.get(MenuState.cursor).contents);
+          //isInMenu = false;
+        }
+
       }
     } else {
 
       if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal
                                    // directions.
-        pos.y = Math.max(1.0, pos.y - currentSpeed);
+        pos.y = Math.max(0.0, pos.y - currentSpeed);
         direction = Game.Direction.UP;
       } else if (goingDown && !goingUp) {
         pos.y = Math.min(farBottom, pos.y + currentSpeed);
@@ -298,15 +351,16 @@ public class LevelEditor {
        c.matrix[(int) pos.y][(int) pos.x].isWall = false;
       } else if (delete) {
         c.matrix[(int) pos.y][(int) pos.x].sprites.clear();
+      }else if(eventsSwitch){
+        Game.eventsOn = !Game.eventsOn;
       } else if (Ctrl && select) {
-        try {
-         DS.VectorNode n = c.dump();
-         File writeTo = new File("tripleTest.txt");
-         n.dump(new FileWriter(writeTo));
-         DS.Root r = DS.load(new FileReader(writeTo)); 
-         
-        } catch (Exception e) {
-        }
+        DS.VectorNode n = c.dump();
+        File writeTo = new File("tripleTest.txt");
+        FileWriter nodeWriter = new FileWriter(writeTo);
+        n.dump(nodeWriter);
+        nodeWriter.close();
+        DS.Root deserialized = DS.load(new FileReader(writeTo));
+        System.out.println(deserialized);
       }
     }
 
@@ -315,43 +369,43 @@ public class LevelEditor {
   public static void render() throws OperationNotSupportedException {
     displayState = MenuState.render();
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
-    for (int i = 0; i < WIDTH; i++) { // Vertical cursor coordinate (y)
-      for (int j = 0; j < HEIGHT; j++) { // Horizontal cursor coordinate (x)
+    for (int i = 0; i < LevelEditor.HEIGHT; i++) { // Vertical cursor coordinate (y)
+      for (int j = 0; j < LevelEditor.WIDTH; j++) { // Horizontal cursor coordinate (x) 
         if (i == trunc_y && j == trunc_x) {
           displayState += "@";
-        } else if (c.matrix[j][i].sprites.size() != 0) {
-          if (c.matrix[j][i].sprites.get(0).visible) {
-            displayState += c.matrix[j][i].sprites.get(0).symbol;
+        } else if (c.matrix[i][j].sprites.size() != 0) {
+          if (c.matrix[i][j].sprites.get(0).visible) {
+            displayState += c.matrix[i][j].sprites.get(0).symbol;
           }
         } else {
-          if (c.matrix[j][i].isWall == true){
+          if (c.matrix[i][j].isWall == true){
             displayState += "|"; 
           }
           else{ 
             displayState += " ";
           }
         }
-        displayState += " ";
+        //displayState += " ";
       }
       displayState += "\n";
     }
 
     if (dialogueIn.size() == 0) {
       displayState += "+";
-      for (int i = 0; i < DIALOGUE_WIDTH * 2 + 1; i++) { // Horizontal cursor coordinate (x)
+      for (int i = 0; i < DIALOGUE_WIDTH; i++) { // Horizontal cursor coordinate (x)
         displayState += "-";
       }
       displayState += "+";
       displayState += "\n";
       for (int i = 0; i < DIALOGUE_HEIGHT; i++) {
         displayState += "|";
-        for (int j = 0; j < DIALOGUE_WIDTH * 2 + 1; j++) {
+        for (int j = 0; j < DIALOGUE_WIDTH; j++) {
           displayState += " ";
         }
         displayState += "|\n";
       }
       displayState += "+";
-      for (int i = 0; i < DIALOGUE_WIDTH * 2 + 1; i++) {
+      for (int i = 0; i < DIALOGUE_WIDTH; i++) {
         displayState += "-";
       }
       displayState += "+";
@@ -359,14 +413,14 @@ public class LevelEditor {
       String[] split_in = ((String) dialogueIn.remove()).split("");
       String[][] to_insert = formatString(split_in);
       displayState += "+";
-      for (int i = 0; i < DIALOGUE_WIDTH * 2 + 1; i++) { // Horizontal cursor coordinate (x)
+      for (int i = 0; i < DIALOGUE_WIDTH; i++) { // Horizontal cursor coordinate (x)
         displayState += "-";
       }
       displayState += "+";
       displayState += "\n";
       for (int i = 0; i < DIALOGUE_HEIGHT; i++) {
         displayState += "|";
-        for (int j = 0; j < DIALOGUE_WIDTH * 2 + 1; j++) {
+        for (int j = 0; j < DIALOGUE_WIDTH; j++) {
           if (to_insert[i][j] != null) {
             displayState += to_insert[i][j];
           } else {
@@ -376,10 +430,19 @@ public class LevelEditor {
         displayState += "|\n";
       }
       displayState += "+";
-      for (int i = 0; i < DIALOGUE_WIDTH * 2 + 1; i++) {
+      for (int i = 0; i < DIALOGUE_WIDTH; i++) {
         displayState += "-";
       }
       displayState += "+";
+    }
+
+    displayState += "\n";
+    displayState += "Sprite functionality:"; 
+    if (Game.eventsOn) {
+      displayState += " on.";
+    }
+    else{
+      displayState += " off.";
     }
   }
 

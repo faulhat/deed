@@ -153,7 +153,7 @@ public class Chamber implements DS.Storable {
   }
 
   public Chamber() {
-    this.matrix = new Square[this.height][this.width];
+    this.matrix = new Square[height][width];
     this.directionDropGetter = new EnumMap<>(Game.Direction.class);
     /*
      * Default drop positions are at halfway up the chamber at left/right edge for
@@ -163,17 +163,16 @@ public class Chamber implements DS.Storable {
      */
     int y_horizontal = width / 2;
     int x_horizontal = height / 2;
-    fromUpDrop = new Point(x_horizontal, 0);
-    fromDownDrop = new Point(x_horizontal, height-1);
-    fromLeftDrop = new Point(0, y_horizontal);
-    fromRightDrop = new Point(width-1, y_horizontal);
-    System.out.println(fromUpDrop + " " + fromDownDrop + " " + fromLeftDrop + " " + fromRightDrop);
+    fromUpDrop = new Point(y_horizontal, height-1);
+    fromDownDrop = new Point(y_horizontal, 0);
+    fromLeftDrop = new Point(0, x_horizontal);
+    fromRightDrop = new Point(width-1, x_horizontal);
     directionDropGetter.put(Game.Direction.UP, fromUpDrop);
     directionDropGetter.put(Game.Direction.DOWN, fromDownDrop);
     directionDropGetter.put(Game.Direction.LEFT, fromLeftDrop);
     directionDropGetter.put(Game.Direction.RIGHT, fromRightDrop);
-    for (int i = 0; i < this.width; i++) {
-      for (int j = 0; j < this.height; j++) {
+    for (int i = 0; i < width; i++) {
+      for (int j = 0; j < height; j++) {
         ArrayList<Sprite> s = new ArrayList<Sprite>();
         Square toAdd = new Square(false, s);
         matrix[j][i] = toAdd;
@@ -208,9 +207,9 @@ public class Chamber implements DS.Storable {
   }
 
   public Chamber(int width) {
-    matrix = new Square[this.height][this.width];
-    for (int i = 0; i < this.height; i++) {
-      for (int j = 0; j < this.width; j++) {
+    matrix = new Square[height][width];
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
         ArrayList<Sprite> s = new ArrayList<Sprite>();
         Square toAdd = new Square(false, s);
         matrix[i][j] = toAdd;
@@ -250,10 +249,10 @@ public class Chamber implements DS.Storable {
       for (int j = 0; j < height; j++) {
         DS.Node squareNode = colVector.complexVal.get(j);
         if (squareNode instanceof DS.IdNode && ((DS.IdNode) squareNode).isNil()) {
-          matrix[i][j] = null;
+          matrix[j][i] = null;
         }
         else {
-          matrix[i][j] = new Square(colVector.complexVal.get(j));
+          matrix[j][i] = new Square(colVector.complexVal.get(j));
       
         }
       }
@@ -267,11 +266,11 @@ public class Chamber implements DS.Storable {
     for (int i = 0; i < width; i++) {
       DS.VectorNode subnode = new DS.VectorNode();
       for (int j = 0; j < height; j++) {
-        if (matrix[i][j] == null) {
+        if (matrix[j][i] == null) {
           subnode.complexVal.add(new DS.IdNode("nil"));
         }
         else {
-          subnode.complexVal.add(matrix[i][j].dump());
+          subnode.complexVal.add(matrix[j][i].dump());
         }
       }
 
@@ -291,15 +290,15 @@ public class Chamber implements DS.Storable {
 
     for (int i = 0; i < width; i++) {
       for (int j = 0; j < height; j++) {
-        if (other.matrix[i][j] == null) {
-          if (matrix[i][j] == null) {
+        if (other.matrix[j][i] == null) {
+          if (matrix[j][i] == null) {
             continue;
           }
 
           return false;
         }
 
-        if (!other.matrix[i][j].equals(matrix[i][j])) {
+        if (!other.matrix[j][i].equals(matrix[j][i])) {
           return false;
         }
       }
@@ -341,5 +340,8 @@ public class Chamber implements DS.Storable {
   public void eventAtPos(Point2D.Double pos, Game.Event e) throws InterruptedException{
    Square toActOn = matrix[(int)pos.y][(int)pos.x];
    toActOn.eventOn(e);
+  }
+  public void insertAtPoint(Sprite insert, Point2D.Double where){
+    matrix[(int)where.y][(int)where.x].sprites.add(insert);
   }
 }

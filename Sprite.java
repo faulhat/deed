@@ -1,7 +1,8 @@
 import java.util.Map;
 import java.util.ArrayList;
+import java.awt.geom.Point2D;
 
-public class Sprite implements DS.Storable {
+public class Sprite extends LevelEditor.MenuState.Insertable implements DS.Storable{
   public boolean visible;
 
   public Game.SpriteType type;
@@ -35,6 +36,8 @@ public class Sprite implements DS.Storable {
   }
 
   public void onEvent(Game.Event e) throws InterruptedException {
+    if (!Game.eventsOn) return;
+
     Template.Handler handler = handlerMap.get(e.eventType);
 
     if (handler != null) {
@@ -42,7 +45,11 @@ public class Sprite implements DS.Storable {
     }
   }
 
-  // Dummy methods for testing
+  public void insert(){
+    Point2D.Double insertpos = LevelEditor.pos;
+    
+  }
+
   public DS.MapNode dump() {
     DS.MapNode mapOfSprite = new DS.MapNode();
     String isVis = "";

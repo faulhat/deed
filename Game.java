@@ -226,7 +226,6 @@ public class Game {
   public KeyBox box;
   // Components of the GUI
   public JTextArea textArea;
-  public JTextArea insertMenu;
   // Position of the player
   public Point2D.Double pos;
   // Game display state
@@ -250,11 +249,8 @@ public class Game {
     textArea.setFocusable(false);
     textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
     render();
-    insertMenu = new JTextArea();
     textArea.setText(displayState);
     box = new KeyBox();
-    box.frame.add(insertMenu);
-    box.frame.add(textArea);
 
     box.frame.pack();
     box.frame.setVisible(true);
@@ -344,9 +340,8 @@ public class Game {
             displayState += " ";
           }
         }
-        displayState += " ";
       }
-      displayState += "\n\n";
+      displayState += "\n";
     }
   }
 
@@ -355,15 +350,10 @@ public class Game {
     Instant then = Instant.now();
     while (true) {
       Instant now = Instant.now();
-      update((double) Duration.between(then, now).toNanos() / 1e6); // Provide the time delta for update based on the
-                                                                    // time since the last iteration.
+      update((double) Duration.between(then, now).toNanos() / 1e6); // Provide the time delta for update based on the                                                                // time since the last iteration.
       render();
       textArea.setText(displayState); // Write displayState to the actual display
       then = now;
     }
-  }
-
-  public static void main(String args[]) throws Exception { // program entry point
-    new Game().run();
   }
 }

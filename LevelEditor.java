@@ -24,9 +24,7 @@ public class LevelEditor {
   public static final int DIALOGUE_HEIGHT = 4;
   public static final int DIALOGUE_WIDTH = WIDTH - 2;
   public static final double SPEED = 0.010;
-  public static final String baseTextMenu = "DIALOGUE\n";
-  // String[][] representing submenu at each index
-  public final String[][] expandedTextMenu = { { "Dialogue_Point" } };
+  public final Template dialoguePoint;
 
   // Components of the GUI
   public JTextArea textArea;
@@ -197,10 +195,9 @@ public class LevelEditor {
   // Initialize outerState state
   public LevelEditor(Game outerState) throws OperationNotSupportedException, InterruptedException {
     menuState = new MenuState();
-    
     this.outerState = outerState;
     outerState.eventsOn = false;
-    
+    dialoguePoint = outerState.initDialoguePoint();
     ArrayList<MenuItem> ex = new ArrayList<>();
     box = new Game.KeyBox();
     dialogueIn = new LinkedBlockingQueue<String>();
@@ -247,7 +244,6 @@ public class LevelEditor {
     pos = new Point2D.Double(2.0, 2.0);
 
     textSpriteMenu = new JTextArea();
-    textSpriteMenu.setText(baseTextMenu);
     textArea = new JTextArea();
     textArea.setEditable(false);
     textArea.setFocusable(false);
@@ -320,8 +316,8 @@ public class LevelEditor {
           //isInMenu = false;
         }
         else{
-          if (this.items.get(menuState.cursor).contents instanceof MenuState.Editable){
-            ((Editable)menuState.items.get(menuState.cursor).contents).accept(dialoguePoint.genSprite(new ArrayList<Object>(Arrays.asList("test", "print this"))), "print that"); 
+          if (menuState.items.get(menuState.cursor).contents instanceof Editable){
+            ((Editable<String>)menuState.items.get(menuState.cursor).contents).accept(dialoguePoint.genSprite(new ArrayList<Object>(Arrays.asList("test", "don't print this"))), "print that"); 
           }
         }
       }

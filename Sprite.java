@@ -1,8 +1,9 @@
 import java.util.Map;
+
 import java.util.ArrayList;
 import java.awt.geom.Point2D;
 
-public class Sprite extends LevelEditor.MenuState.Insertable implements DS.Storable{
+public class Sprite extends LevelEditor.Insertable implements DS.Storable{
   public boolean visible;
 
   public Game.SpriteType type;
@@ -14,6 +15,8 @@ public class Sprite extends LevelEditor.MenuState.Insertable implements DS.Stora
   public char symbol;
   // String representing name of location of sprite
   public String location;
+
+  public Game game;
 
   public ArrayList<Object> uniqueData;
 
@@ -36,8 +39,6 @@ public class Sprite extends LevelEditor.MenuState.Insertable implements DS.Stora
   }
 
   public void onEvent(Game.Event e) throws InterruptedException {
-    if (!Game.eventsOn) return;
-
     Template.Handler handler = handlerMap.get(e.eventType);
 
     if (handler != null) {
@@ -46,7 +47,7 @@ public class Sprite extends LevelEditor.MenuState.Insertable implements DS.Stora
   }
 
   public void insert(){
-    Point2D.Double insertpos = LevelEditor.pos;
+    Point2D.Double insertpos = Game.pos;
     
   }
 

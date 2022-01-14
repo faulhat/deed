@@ -16,12 +16,6 @@ import java.time.Duration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FileReader;
-import java.io.*;
-import java.util.*;
-import java.awt.*;
-import java.lang.*;
-import java.beans.*;
-import java.applet.*;
 
 public class LevelEditor {
 
@@ -32,30 +26,68 @@ public class LevelEditor {
   public static final double SPEED = 0.010;
   public static final String baseTextMenu = "DIALOGUE\n";
   // String[][] representing submenu at each index
-  public static final String[][] expandedTextMenu = { { "Dialogue_Point" } };
-  // Game display state
-
-  //
+  public final String[][] expandedTextMenu = { { "Dialogue_Point" } };
 
   // Components of the GUI
-  public static JTextArea textArea;
-  public static JTextArea textSpriteMenu;
-  public static JMenuBar menuBar;
+  public JTextArea textArea;
+  public JTextArea textSpriteMenu;
+  public JMenuBar menuBar;
+
+  public static interface Interactable {
+  }
+
+  public static interface Editable<T> extends Interactable, BiConsumer<Sprite, T>{
+    
+  }
+  public static abstract class Insertable implements Interactable {
+    public abstract void insert();
+  }
 
   // Singleton class representing the state of the insertion menu
-  public static class MenuState {
-    public interface Interactable{
+  public class MenuState {
+    // Which line is selected?
+    public int cursor;
+
+    public ArrayList<MenuItem> items;
+
+    public final int N_LINES = 2;
+
+    public void init(ArrayList<MenuItem> initItems) {
+      items = initItems;
+      cursor = 0;
     }
-    @FunctionalInterface
-    public static interface Editable extends BiConsumer<Sprite, Object>, Interactable{
-      @Override
-      public void accept(Sprite s , Object o);
+
+    public int getCount() {
+      int n = 0;
+      for (MenuItem item : items) {
+        n += item.getCount();
+      }
+
+      return n;
     }
-    public static abstract class Insertable implements Interactable{
-      public abstract void insert();
+
+    public void moveCursor(int offset) {
+      cursor = Math.max(0, Math.min(offset, getCount()));
     }
-    // Class representing an item on the menu, which can have sub-items.
-    public static class MenuItem {
+
+    public String render() {
+      String text = "";
+
+      for (int i = 0; i < items.size(); i++) {
+        text += items.get(i).show(new int[] { i }, cursor, 0);
+      }
+
+      String[] lines = text.split("\n");
+
+      int last_line = Math.min(cursor + N_LINES, lines.length);
+
+      return String.join("\n", Arrays.asList(Arrays.copyOfRange(lines, Math.max(last_line - N_LINES, 0), last_line))) + '\n';
+
+    }
+  }
+
+  // Class representing an item on the menu, which can have sub-items.
+  public class MenuItem {
       // Does this menu item have sub-items?
       public final boolean isLeaf;
 
@@ -113,14 +145,10 @@ public class LevelEditor {
         text += name + '\n';
         lineno[0]++;
 
-        for (MenuItem item : items) {
-          if (item.isLeaf){       
-             text += Repeat.repeat(" ", depth+1) + item.name;
-          }
-          else if (item.expanded){
-            for (MenuItem subItem : item.subItems){
-                  text += Repeat.repeat(" ", depth+1) + subItem.name + '\n';
-            }
+        if (!isLeaf && expanded) {
+          for (MenuItem item : subItems) {
+            
+            text += item.show(lineno, cursor, depth + 1);
           }
         }
         return text;
@@ -140,83 +168,40 @@ public class LevelEditor {
       }
     }
 
-    // Which line is selected?
-    public static int cursor;
-
-    public static ArrayList<MenuItem> items;
-
-    public static final int N_LINES = 4;
-
-    public static void init(ArrayList<MenuItem> initItems) {
-      items = initItems;
-      cursor = 0;
-    }
-
-    public static int getCount() {
-      int n = 0;
-      for (MenuItem item : items) {
-        n += item.getCount();
-      }
-
-      return n;
-    }
-
-    public static void moveCursor(int offset) {
-      cursor = Math.max(0, Math.min(offset, getCount()));
-    }
-
-    public static String render() {
-      String text = "";
-
-      for (int i = 0; i < items.size(); i++) {
-        if (!items.get(i).isLeaf && items.get(i).expanded){
-         ArrayList<MenuState.MenuItem> subItems = items.get(i).subItems;
-         System.out.println(subItems.get(0).name + " " + subItems.get(1).name);
-         for (int j = 0; j < subItems.size(); j++){
-            text += ' ' + subItems.get(j).name + '\n';
-         }
-         break;
-        } 
-        else{
-         text += items.get(i).show(new int[] { i }, cursor, 0);
-        }
-      }
-
-      String[] lines = text.split("\n");
-
-      int last_line = Math.min(cursor + N_LINES, lines.length);
-
-      return String.join("\n", Arrays.asList(Arrays.copyOfRange(lines, Math.max(last_line - N_LINES, 0), last_line))) + '\n';
-
-    }
-  }
-
   // Position of the cursor in the level being edited
-  public static Point2D.Double pos;
+  public Point2D.Double pos;
   //Direction in which the player is going
-  public static Game.Direction direction;
+  public Game.Direction direction;
   // boolean representing whether the player is in the menu or not
-  public static boolean isInMenu;
-  // String representing level editor state
-  private static String displayState;
-  // Dialogue Queue
-  public static LinkedBlockingQueue<String> dialogueIn;
-  // Matrix of chars to store insertion for levels
-  public static Chamber c = new Chamber();
+  public boolean isInMenu;
 
-  public static Game.KeyBox box;
+  // String representing level editor state
+  private String displayState;
+  // Dialogue Queue
+  public LinkedBlockingQueue<String> dialogueIn;
+  // Matrix of chars to store insertion for levels
+  public Chamber c = new Chamber();
+
+  public Game.KeyBox box;
   
-  public static void goToChamber(Chamber goTo, Game.Direction direction) {
+  public void goToChamber(Chamber goTo, Game.Direction direction) {
     c = goTo;
     pos.x = goTo.directionDropGetter.get(direction).getX();
     pos.y = goTo.directionDropGetter.get(direction).getY();
     
   }
-  // Initialize game state
-  public static void init() throws OperationNotSupportedException, InterruptedException {
-    Game.eventsOn = false;
+
+  public Game outerState;
+  public MenuState menuState;
+
+  // Initialize outerState state
+  public LevelEditor(Game outerState) throws OperationNotSupportedException, InterruptedException {
+    menuState = new MenuState();
     
-    ArrayList<MenuState.MenuItem> ex = new ArrayList<>();
+    this.outerState = outerState;
+    outerState.eventsOn = false;
+    
+    ArrayList<MenuItem> ex = new ArrayList<>();
     box = new Game.KeyBox();
     dialogueIn = new LinkedBlockingQueue<String>();
     direction = Game.Direction.UP;
@@ -228,38 +213,37 @@ public class LevelEditor {
     exitExample.add("Exit");
     exitExample.add(c);
 
-    Template dialoguePoint = Game.initDialoguePoint();
-    Template exit = Game.initExit();
+    Template dialoguePoint = outerState.initDialoguePoint();
+    Template exit = outerState.initExit();
     Sprite dialoguePointSprite = dialoguePoint.genSprite(m);
     Sprite exitSprite = exit.genSprite(exitExample);
-    MenuState.Editable editText = (sprite , dialogueSequence) -> {
-      ((Sprite)sprite).uniqueData.set(0, dialogueSequence);
+    Editable<String> editText = (sprite , dialogueSequence) -> {
+      sprite.uniqueData.set(0, dialogueSequence);
     };
-    MenuState.Editable editDestination = (toModify, destination) -> {
-      ((Sprite)toModify).uniqueData.set(0, destination);
+    Editable<Chamber> editDestination = (toModify, destination) -> {
+      toModify.uniqueData.set(0, destination);
     };
     
 
-    MenuState.MenuItem dialoguePointMenu = new MenuState.MenuItem("DialoguePoint"),
-                      dialoguePointInsert = new MenuState.MenuItem("Insert", dialoguePointSprite),
-    editDialogue = new MenuState.MenuItem("Edit text", editText);
-    System.out.println(dialoguePointInsert.isLeaf);
+    MenuItem dialoguePointMenu = new MenuItem("DialoguePoint"),
+                      dialoguePointInsert = new MenuItem("Insert", dialoguePointSprite),
+    editDialogue = new MenuItem("Edit text", editText);
     dialoguePointMenu.subItems.add(editDialogue);
     dialoguePointMenu.subItems.add(dialoguePointInsert);
 
-    MenuState.MenuItem exitMenu = new MenuState.MenuItem("Exit"),
-    exitSpriteInit = new MenuState.MenuItem("Insert"),
-    editExitChamber = new MenuState.MenuItem("Edit Goto chamber", editDestination);
+    MenuItem exitMenu = new MenuItem("Exit"),
+    exitSpriteInit = new MenuItem("Insert"),
+    editExitChamber = new MenuItem("Edit goto chamber", editDestination);
     exitMenu.subItems.add(exitSpriteInit);
     exitMenu.subItems.add(editExitChamber);
     
-    MenuState.MenuItem itemPickup = new MenuState.MenuItem("Add an item pickup to this location");
-    MenuState.MenuItem itemTypeSelect = new MenuState.MenuItem("Select the item");
+    MenuItem itemPickup = new MenuItem("Add an item pickup to this location");
+    MenuItem itemTypeSelect = new MenuItem("Select the item");
     ex.add(exitMenu);
     ex.add(dialoguePointMenu);
     
 
-    MenuState.init(ex);
+    menuState.init(ex);
     pos = new Point2D.Double(2.0, 2.0);
 
     textSpriteMenu = new JTextArea();
@@ -280,7 +264,7 @@ public class LevelEditor {
     box.frame.setVisible(true);
   }
 
-  public static void update(double delta) throws Exception {
+  public void update(double delta) throws Exception {
     // Multiply the time delta between now and the last update by the SPEED constant
     // to calculate the offset
     // we should move the player by on this update (if he moves).
@@ -306,11 +290,13 @@ public class LevelEditor {
         checkPos = box.getResetKey(KeyEvent.VK_P),
         eventsSwitch = box.getReleaseKey(KeyEvent.VK_W),
         openMenu = box.getReleaseKey(KeyEvent.VK_O);
-    if (Game.eventsOn) {  
+    if (outerState.eventsOn) {  
       for (int i = (int) Math.max(pos.y - 1, 0.0); i <= (int) Math.min(farBottom, pos.y + 1.0); i++) {
         for (int j = (int) Math.max(pos.x - 1.0, 0.0); j <= (int) Math.min(farRight, pos.x + 1.0); j++) {
           Chamber.Square s = c.matrix[i][j];
-          s.eventOn(new Game.Event(Game.EventType.TouchEvent, direction));
+          if (outerState.eventsOn) {
+            s.eventOn(new Game.Event(Game.EventType.TouchEvent, direction));
+          }
         }
       }
       c.eventAtPos(pos, new Game.Event(Game.EventType.IntersectEvent, direction));
@@ -324,24 +310,23 @@ public class LevelEditor {
     }
     if (isInMenu) {
       if (goingUp && !goingDown) {
-        MenuState.moveCursor(-1);
+        menuState.moveCursor(-1);
       } else if (goingDown && !goingUp) {
-        MenuState.moveCursor(1);
+        menuState.moveCursor(1);
       } else if (select) {
-        if (!MenuState.items.get(MenuState.cursor).isLeaf){;
-          MenuState.items.get(MenuState.cursor).expanded = true;
-          //c.matrix[(int) pos.y][(int) pos.x].sprites.add((Sprite)MenuState.items.get(MenuState.cursor).contents);
+        if (!menuState.items.get(menuState.cursor).isLeaf){;
+          menuState.items.get(menuState.cursor).expanded = true;
+          //c.matrix[(int) pos.y][(int) pos.x].sprites.add((Sprite)menuState.items.get(menuState.cursor).contents);
           //isInMenu = false;
         }
         else{
-          if (MenuState.items.get(MenuState.cursor).contents instanceof MenuState.Editable){
-            ((MenuState.Editable)MenuState.items.get(MenuState.cursor).contents).accept(Game.dialoguePoint.genSprite(new ArrayList<Object>(Arrays.asList("test", "print this"))), "print that"); 
+          if (this.items.get(menuState.cursor).contents instanceof MenuState.Editable){
+            ((Editable)menuState.items.get(menuState.cursor).contents).accept(dialoguePoint.genSprite(new ArrayList<Object>(Arrays.asList("test", "print this"))), "print that"); 
           }
         }
       }
     } else {
       if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal
-                                   // directions.
         pos.y = Math.max(0.0, pos.y - currentSpeed);
         direction = Game.Direction.UP;
       } else if (goingDown && !goingUp) {
@@ -369,22 +354,19 @@ public class LevelEditor {
       } else if (delete) {
         c.matrix[(int) pos.y][(int) pos.x].sprites.clear();
       }else if(eventsSwitch){
-        Game.eventsOn = !Game.eventsOn;
+        outerState.eventsOn = !outerState.eventsOn;
       } else if (Ctrl && select) {
         DS.VectorNode n = c.dump();
         File writeTo = new File("tripleTest.txt");
         FileWriter nodeWriter = new FileWriter(writeTo);
         n.dump(nodeWriter);
         nodeWriter.close();
-        DS.Root deserialized = DS.load(new FileReader(writeTo));
-        System.out.println(deserialized);
       }
     }
-
   }
 
-  public static void render() throws OperationNotSupportedException {
-    displayState = MenuState.render();
+  public void render() throws OperationNotSupportedException {
+    displayState = menuState.render();
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < LevelEditor.HEIGHT; i++) { // Vertical cursor coordinate (y)
       for (int j = 0; j < LevelEditor.WIDTH; j++) { // Horizontal cursor coordinate (x) 
@@ -455,7 +437,7 @@ public class LevelEditor {
 
     displayState += "\n";
     displayState += "Sprite functionality:"; 
-    if (Game.eventsOn) {
+    if (outerState.eventsOn) {
       displayState += " on.";
     }
     else{
@@ -463,7 +445,7 @@ public class LevelEditor {
     }
   }
 
-  public static String[][] formatString(String[] str) {
+  public String[][] formatString(String[] str) {
     String[][] formattedDialogue = new String[DIALOGUE_HEIGHT][DIALOGUE_WIDTH * 2 + 1];
     for (int i = 0; i < Math.min(str.length, (DIALOGUE_HEIGHT - 2) * (DIALOGUE_WIDTH * 2)); i++) {
       formattedDialogue[i / DIALOGUE_WIDTH][i % DIALOGUE_WIDTH] = str[i];
@@ -472,7 +454,7 @@ public class LevelEditor {
   }
 
   // Method to call update and render repeatedly until the program exits.
-  public static void run() throws Exception {
+  public void run() throws Exception {
     Instant then = Instant.now();
     while (true) {
       Instant now = Instant.now();
@@ -481,13 +463,12 @@ public class LevelEditor {
       // time since the last iteration.
       render();
       textArea.setText(displayState); // Write displayState to the actual display
-      textSpriteMenu.setText(MenuState.render());
+      textSpriteMenu.setText(menuState.render());
       then = now;
     }
   }
 
-  public static void main(String args[]) throws Exception { // program entry point
-    init();
-    run();
+  public void main(String args[]) throws Exception { // program entry point
+    new LevelEditor(new Game()).run();
   }
 }

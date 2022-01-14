@@ -163,6 +163,8 @@ public class Game {
       iniSprite.handlerMap = handlerMap;
       iniSprite.uniqueData = uniqueData;
       iniSprite.type = SpriteType.Dialogue_Point;
+      iniSprite.symbol = 'd';
+      iniSprite.visible = true;
       return iniSprite;
     };
 
@@ -241,7 +243,6 @@ public class Game {
     DS.Root loadChamber = DS.load(new FileReader("tripleTest.txt"));
     DS.VectorNode nodeToUse = ((DS.VectorNode)loadChamber.complexVal.get(0));
     Chamber chamberToUse = new Chamber(nodeToUse);
-    System.out.println(chamberToUse.matrix[0][1]);
     pos = new Point2D.Double(2.0, 2.0);
     dialogueIn = new LinkedBlockingQueue<String>();
     textArea = new JTextArea();
@@ -272,7 +273,6 @@ public class Game {
         goingDown = box.getResetKey(KeyEvent.VK_DOWN),
         goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
         goingRight = box.getResetKey(KeyEvent.VK_RIGHT);
-        System.out.println(goingRight);
     if (goingUp && goingLeft && !goingDown && !goingRight) { // Up and down would cancel each other out, as would left
       playerDirection = Direction.LEFT_UP; // and right
       pos.x = Math.max(0.0, pos.x - diagInterval);

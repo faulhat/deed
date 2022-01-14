@@ -46,9 +46,8 @@ public class Sprite extends LevelEditor.Insertable implements DS.Storable{
     }
   }
 
-  public void insert(){
-    Point2D.Double insertpos = game.pos;
-    
+  public void insert(Point2D.Double pos){
+
   }
 
   public DS.MapNode dump() {

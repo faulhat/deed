@@ -34,17 +34,18 @@ public class LevelEditor {
     
   }
   public static abstract class Insertable implements Interactable {
-    public abstract void insert();
+    public abstract void insert(Point2D.Double pos);
   }
 
   // Singleton class representing the state of the insertion menu
   public class MenuState {
     // Which line is selected?
     public int cursor;
-
+    // Which submenu item is selected?
+    public boolean inSubMenu;
     public ArrayList<MenuItem> items;
 
-    public final int N_LINES = 2;
+    public final int N_LINES = 8;
 
     public void init(ArrayList<MenuItem> initItems) {
       items = initItems;
@@ -61,7 +62,16 @@ public class LevelEditor {
     }
 
     public void moveCursor(int offset) {
-      cursor = Math.max(0, Math.min(offset, getCount()));
+      if(!items.get(cursor).expanded){
+        cursor = Math.max(0, Math.min(offset, getCount()));
+      }
+      else if (!items.get(cursor).isLeaf && !isInMenu){
+        inSubMenu = true;
+      }
+      else{
+        items.get(cursor).moveCursor(offset);
+      }
+      
     }
 
     public String render() {
@@ -91,6 +101,10 @@ public class LevelEditor {
 
       public boolean expanded;
 
+      public boolean cursorIn;
+
+      public int cursor;
+
       // Contents represented by this item.
       public Interactable contents;
 
@@ -100,6 +114,7 @@ public class LevelEditor {
         this.subItems = new ArrayList<>();
         this.contents = null;
         this.expanded = false;
+        this.cursor = 0;
       }
 
       public MenuItem(String name, Interactable contents) {
@@ -108,6 +123,7 @@ public class LevelEditor {
         this.subItems = null;
         this.contents = contents;
         this.expanded = false;
+        this.cursor = 0;
       }
       public void expand(){
         this.expanded = true;
@@ -136,15 +152,19 @@ public class LevelEditor {
           text += "  ";
         }
 
-        text += name + '\n';
+        text += name + ": ";
         lineno[0]++;
 
         if (!isLeaf && expanded) {
-          for (MenuItem item : subItems) {
-            text += item.show(lineno, cursor, depth + 1);
+          text += '\n';
+          for (int i = 0; i < subItems.size(); i++) {
+            if (i == this.cursor){
+              text += " >";
+            }
+            text += subItems.get(i).show(lineno, cursor, depth + 1) + '\n';
           }
         }
-        return text;
+        return text + '\n';
       }
 
       public int getCount() {
@@ -159,6 +179,10 @@ public class LevelEditor {
 
         return n;
       }
+      //Method should only be called on subMenu
+      public void moveCursor(int offset){
+        cursor = Math.max(0, Math.min(offset, this.subItems.size()));
+      }
     }
 
   // Position of the cursor in the level being edited
@@ -167,7 +191,7 @@ public class LevelEditor {
   public Game.Direction direction;
   // boolean representing whether the player is in the menu or not
   public boolean isInMenu;
-
+  
   // String representing level editor state
   private String displayState;
   // Dialogue Queue
@@ -222,7 +246,7 @@ public class LevelEditor {
     dialoguePointMenu.subItems.add(dialoguePointInsert);
 
     MenuItem exitMenu = new MenuItem("Exit"),
-    exitSpriteIniti = new MenuItem("Insert", new Sprite("A")),
+    exitSpriteIniti = new MenuItem("Insert", exitSpriteInit.genSprite(exitExample)),
     editExitChamber = new MenuItem("Edit goto chamber", editDestination);
     exitMenu.subItems.add(exitSpriteIniti);
     exitMenu.subItems.add(editExitChamber);
@@ -272,7 +296,6 @@ public class LevelEditor {
         reset = box.getResetKey(KeyEvent.VK_R),
         checkPos = box.getResetKey(KeyEvent.VK_P),
         eventsSwitch = box.getReleaseKey(KeyEvent.VK_W);
-        System.out.println(openInsertMenu + " " +  goingUp);
     if (outerState.eventsOn) {  
       for (int i = (int) Math.max(pos.y - 1, 0.0); i <= (int) Math.min(farBottom, pos.y + 1.0); i++) {
         for (int j = (int) Math.max(pos.x - 1.0, 0.0); j <= (int) Math.min(farRight, pos.x + 1.0); j++) {
@@ -290,6 +313,9 @@ public class LevelEditor {
       isInMenu = true;
     } else if (closeInsertMenu) {
       isInMenu = false;
+      for (MenuItem item : menuState.items){
+        item.expanded = false;
+      }
     }
     if (isInMenu) {
       if (goingUp && !goingDown) {
@@ -297,18 +323,35 @@ public class LevelEditor {
       } else if (goingDown && !goingUp) {
         menuState.moveCursor(1);
       } else if (select) {
-        if (!menuState.items.get(menuState.cursor).isLeaf){;
-          menuState.items.get(menuState.cursor).expanded = !menuState.items.get(menuState.cursor).expanded;
-          //c.matrix[(int) pos.y][(int) pos.x].sprites.add((Sprite)menuState.items.get(menuState.cursor).contents);
-          //isInMenu = false;
+        if (!menuState.items.get(menuState.cursor).isLeaf && !menuState.inSubMenu){;
+          menuState.items.get(menuState.cursor).expanded = true;
+        }
+        MenuItem item = menuState.items.get(menuState.cursor);
+        if  (item.isLeaf && menuState.inSubMenu){
+          if (item.contents instanceof Editable){
+            ((Editable<String>)menuState.items.get(menuState.cursor).subItems.get(menuState.items.get(menuState.cursor).cursor)).accept(dialoguePoint.genSprite(new ArrayList<Object>(Arrays.asList("Test_Init", "Don't print this"))),"Print that");
+          }
+          else if (item.contents instanceof Insertable){
+            c.matrix[(int)pos.y][(int)pos.x].sprites.add((Sprite)item.contents);
+          }
         }
         else{
-          if (menuState.items.get(menuState.cursor).contents instanceof Editable){
-            ((Editable<String>)menuState.items.get(menuState.cursor).contents).accept(dialoguePoint.genSprite(new ArrayList<Object>(Arrays.asList("test", "don't print this"))), "print that"); 
+          if (item.contents instanceof Editable){
+            ((Editable<String>)menuState.items.get(menuState.cursor).contents).accept(dialoguePoint.genSprite(new ArrayList<Object>(Arrays.asList("test", "don't print this"))), "print that");
+            System.out.println(item.contents); 
+          }
+          if (menuState.items.get(menuState.cursor).contents instanceof Insertable){
+            c.matrix[(int) pos.x][(int)pos.y].sprites.add((Sprite)menuState.items.get(menuState.cursor).contents);
           }
         }
       }
-    } else {
+        
+      } else if(terrainChangeClear) {
+        menuState.inSubMenu = false;
+        if (!menuState.items.get(menuState.cursor).isLeaf){  
+          menuState.items.get(menuState.cursor).expanded = false;
+        }
+      } else {
       if (goingUp && !goingDown) { // Now that we've dealt with all possible diagonals, we can deal with the normal
         pos.y = Math.max(0.0, pos.y - currentSpeed);
         direction = Game.Direction.UP;

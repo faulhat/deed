@@ -215,7 +215,7 @@ public class Game {
   // chamber which the player is currently in
   public static Chamber currentChamber = new Chamber(1);
   // DialoguePoint template
-  public static Template DialoguePoint = initDialoguePoint();
+  public static Template dialoguePoint = initDialoguePoint();
   // Map of spriteType to template
   public static HashMap<SpriteType, Template> spriteTypeBindings = genBindings();
 

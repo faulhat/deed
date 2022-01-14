@@ -47,7 +47,7 @@ public class Sprite extends LevelEditor.Insertable implements DS.Storable{
   }
 
   public void insert(){
-    Point2D.Double insertpos = Game.pos;
+    Point2D.Double insertpos = game.pos;
     
   }
 
@@ -120,7 +120,7 @@ public class Sprite extends LevelEditor.Insertable implements DS.Storable{
           type = s;
         }
       }
-      this.symbol = Game.spriteTypeBindings.get(type).symbol;
+      this.symbol = game.spriteTypeBindings.get(type).symbol;
       DS.ListNode uniquesList = (DS.ListNode) map.get(":uniqueData");
       System.out.println(uniquesList);
       for (DS.Node n : uniquesList.complexVal) {

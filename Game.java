@@ -135,7 +135,8 @@ public class Game {
 
   public static enum SpriteType {
     Dialogue_Point,
-    Exit
+    Exit,
+    itemPickup;
   }
 
   public static class Event {
@@ -225,6 +226,7 @@ public class Game {
   public KeyBox box;
   // Components of the GUI
   public JTextArea textArea;
+  public JTextArea insertMenu;
   // Position of the player
   public Point2D.Double pos;
   // Game display state
@@ -248,9 +250,12 @@ public class Game {
     textArea.setFocusable(false);
     textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
     render();
+    insertMenu = new JTextArea();
     textArea.setText(displayState);
     box = new KeyBox();
+    box.frame.add(insertMenu);
     box.frame.add(textArea);
+
     box.frame.pack();
     box.frame.setVisible(true);
   }
@@ -271,6 +276,7 @@ public class Game {
         goingDown = box.getResetKey(KeyEvent.VK_DOWN),
         goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
         goingRight = box.getResetKey(KeyEvent.VK_RIGHT);
+        System.out.println(goingRight);
     if (goingUp && goingLeft && !goingDown && !goingRight) { // Up and down would cancel each other out, as would left
       playerDirection = Direction.LEFT_UP; // and right
       pos.x = Math.max(0.0, pos.x - diagInterval);
@@ -320,7 +326,6 @@ public class Game {
     int trunc_x = (int) pos.x, trunc_y = (int) pos.y; // x and y are truncated so we can map them onto the grid.
     for (int i = 0; i < HEIGHT; i++) { // Vertical cursor coordinate (y)
       for (int j = 0; j < WIDTH; j++) { // Horizontal cursor coordinate (x)
-        System.out.println(i + " " + j);
         ArrayList<Sprite> s = new ArrayList<Sprite>(currentChamber.matrix[i][j].sprites);
         if (i == trunc_y && j == trunc_x) {
           displayState += "@";

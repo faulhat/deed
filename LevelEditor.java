@@ -19,17 +19,13 @@ import java.io.FileReader;
 
 public class LevelEditor {
 
-  public static final int WIDTH = 40;
+  public static final int WIDTH = 20;
   public static final int HEIGHT = 25;
   public static final int DIALOGUE_HEIGHT = 4;
   public static final int DIALOGUE_WIDTH = WIDTH - 2;
   public static final double SPEED = 0.010;
   public final Template dialoguePoint;
-
-  // Components of the GUI
-  public JTextArea textArea;
-  public JTextArea textSpriteMenu;
-  public JMenuBar menuBar;
+  public static String menu = "a";
 
   public static interface Interactable {
   }
@@ -145,7 +141,7 @@ public class LevelEditor {
 
         if (!isLeaf && expanded) {
           for (MenuItem item : subItems) {
-            
+            System.out.println(item);
             text += item.show(lineno, cursor, depth + 1);
           }
         }
@@ -211,9 +207,8 @@ public class LevelEditor {
     exitExample.add(c);
 
     Template dialoguePoint = outerState.initDialoguePoint();
-    Template exit = outerState.initExit();
+    
     Sprite dialoguePointSprite = dialoguePoint.genSprite(m);
-    Sprite exitSprite = exit.genSprite(exitExample);
     Editable<String> editText = (sprite , dialogueSequence) -> {
       sprite.uniqueData.set(0, dialogueSequence);
     };
@@ -242,20 +237,16 @@ public class LevelEditor {
 
     menuState.init(ex);
     pos = new Point2D.Double(2.0, 2.0);
-
-    textSpriteMenu = new JTextArea();
-    textArea = new JTextArea();
-    textArea.setEditable(false);
-    textArea.setFocusable(false);
-    textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
+    outerState.insertMenu = new JTextArea(menu);
+    outerState.textArea = new JTextArea();
+    outerState.textArea.setEditable(false);
+    outerState.textArea.setFocusable(false);
+    outerState.textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
     render();
-    textArea.setText(displayState);
-
-    menuBar = new JMenuBar();
+    outerState.textArea.setText(this.displayState);
     // Set menu bar properties
-
-    box.frame.setJMenuBar(menuBar);
-    box.frame.add(textArea);
+    box.frame.add(outerState.textArea);
+    box.frame.add(outerState.insertMenu);
     box.frame.pack();
     box.frame.setVisible(true);
   }
@@ -270,22 +261,22 @@ public class LevelEditor {
     double farRight = (double) WIDTH - 1.0;
     double farBottom = (double) HEIGHT - 1.0;
 
-    boolean goingUp = box.getResetKey(KeyEvent.VK_UP),
-        goingDown = box.getResetKey(KeyEvent.VK_DOWN),
-        goingLeft = box.getResetKey(KeyEvent.VK_LEFT),
-        goingRight = box.getResetKey(KeyEvent.VK_RIGHT),
-        terrainChangeVerticalWall = box.getResetKey(KeyEvent.VK_V),
-        terrainChangeHorizontalWall = box.getResetKey(KeyEvent.VK_H),
-        terrainChangeClear = box.getResetKey(KeyEvent.VK_C),
-        openInsertMenu = box.getResetKey(KeyEvent.VK_I),
-        closeInsertMenu = box.getResetKey(KeyEvent.VK_E),
-        Ctrl = box.getResetKey(KeyEvent.VK_CONTROL),
-        select = box.getResetKey(KeyEvent.VK_S),
-        delete = box.getResetKey(KeyEvent.VK_BACK_SPACE),
-        reset = box.getResetKey(KeyEvent.VK_R),
-        checkPos = box.getResetKey(KeyEvent.VK_P),
-        eventsSwitch = box.getReleaseKey(KeyEvent.VK_W),
-        openMenu = box.getReleaseKey(KeyEvent.VK_O);
+    boolean goingUp = outerState.box.getResetKey(KeyEvent.VK_UP),
+        goingDown = outerState.box.getResetKey(KeyEvent.VK_DOWN),
+        goingLeft = outerState.box.getResetKey(KeyEvent.VK_LEFT),
+        goingRight = outerState.box.getResetKey(KeyEvent.VK_RIGHT),
+        terrainChangeVerticalWall = outerState.box.getResetKey(KeyEvent.VK_V),
+        terrainChangeHorizontalWall = outerState.box.getResetKey(KeyEvent.VK_H),
+        terrainChangeClear = outerState.box.getResetKey(KeyEvent.VK_C),
+        openInsertMenu = outerState.box.getResetKey(KeyEvent.VK_I),
+        closeInsertMenu = outerState.box.getResetKey(KeyEvent.VK_E),
+        Ctrl = outerState.box.getResetKey(KeyEvent.VK_CONTROL),
+        select = outerState.box.getResetKey(KeyEvent.VK_S),
+        delete = outerState.box.getResetKey(KeyEvent.VK_BACK_SPACE),
+        reset = outerState.box.getResetKey(KeyEvent.VK_R),
+        checkPos = outerState.box.getResetKey(KeyEvent.VK_P),
+        eventsSwitch = outerState.box.getReleaseKey(KeyEvent.VK_W);
+        System.out.println(openInsertMenu + " " +  goingUp);
     if (outerState.eventsOn) {  
       for (int i = (int) Math.max(pos.y - 1, 0.0); i <= (int) Math.min(farBottom, pos.y + 1.0); i++) {
         for (int j = (int) Math.max(pos.x - 1.0, 0.0); j <= (int) Math.min(farRight, pos.x + 1.0); j++) {
@@ -339,7 +330,7 @@ public class LevelEditor {
         pos = new Point2D.Double(2.0,2.0);
       }
       else if (checkPos){
-        System.out.println(pos);
+
       }
       if (terrainChangeVerticalWall) {
        c.matrix[(int) pos.y][(int) pos.x].isWall = true;
@@ -458,8 +449,8 @@ public class LevelEditor {
       // Provide the time delta for update based on the
       // time since the last iteration.
       render();
-      textArea.setText(displayState); // Write displayState to the actual display
-      textSpriteMenu.setText(menuState.render());
+      outerState.textArea.setText(displayState); // Write displayState to the actual display
+      outerState.insertMenu.setText(menuState.render());
       then = now;
     }
   }
